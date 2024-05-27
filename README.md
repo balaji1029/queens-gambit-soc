@@ -1,2 +1,2 @@
 # queens-gambit-soc
-There is no description to this repo
+There is no `README.md` in this repo
