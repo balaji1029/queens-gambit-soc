@@ -16,4 +16,4 @@ I'll try to work on it later, but for now, I'm gonna go onto the next problems
 
 Until then...
 
-![Tata](https://media1.tenor.com/m/MRQgxcelAV8AAAAC/perry-the-platypus-phineas-and-ferb.gif)
+![Tata](images/perry-the-platypus-phineas-and-ferb.gif)
