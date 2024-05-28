@@ -14,4 +14,6 @@ Sooo, yeahhhh
 
 I'll try to work on it later, but for now, I'm gonna go onto the next problems
 
-<div class="tenor-gif-embed" data-postid="24637867" data-share-method="host" data-aspect-ratio="1.77778" data-width="100%"><a href="https://tenor.com/view/perry-the-platypus-phineas-and-ferb-gif-24637867">Perry The Platypus Phineas And Ferb GIF</a>from <a href="https://tenor.com/search/perry+the+platypus-gifs">Perry The Platypus GIFs</a></div> <script type="text/javascript" async src="https://tenor.com/embed.js"></script>
+Until then...
+
+![Tata](https://media1.tenor.com/m/MRQgxcelAV8AAAAC/perry-the-platypus-phineas-and-ferb.gif)
