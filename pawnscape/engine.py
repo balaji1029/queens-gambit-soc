@@ -1,4 +1,5 @@
 import copy
+import json
 
 class State:
     def __init__(self, board, turn, move_history):
@@ -112,6 +113,26 @@ class Engine:
         self.stack = Stack()
         self.stack.push(State(self.board, 'w', []))
         self.states = []
+        self.move_history = []
+        black_mdp_file = open('black-mdp.json', 'r')
+        self.black_mdp = json.load(black_mdp_file)
+        black_mdp_file.close()
+        white_mdp_file = open('white-mdp.json', 'r')
+        self.white_mdp = json.load(white_mdp_file)
+        white_mdp_file.close()
+
+    # def __init__(self, board, turn, move_history):
+    #     self.board = board
+    #     self.stack = Stack()
+    #     self.stack.push(State(self.board, turn, move_history))
+    #     self.states = []
+    #     self.move_history = []
+    #     black_mdp_file = open('black-mdp.json', 'r')
+    #     self.black_mdp = json.load(black_mdp_file)
+    #     black_mdp_file.close()
+    #     white_mdp_file = open('white-mdp.json', 'r')
+    #     self.white_mdp = json.load(white_mdp_file)
+    #     white_mdp_file.close()
 
     def go_to_state(self, state):
         print(state)
@@ -124,6 +145,67 @@ class Engine:
         while self.round() == 0:
             print()
             continue
+
+    def run_with_strategy(self):
+        while self.strat_round() == 0:
+            print()
+            continue
+
+    def strat_round(self):
+        self.print_board()
+        print(f'{self.board.turn.upper()}\'s turn\n')
+        if self.board.turn == 'w':
+            move = self.get_white_input()
+        else:
+            move = self.get_black_input()
+        self.make_move(move)
+        if self.board.check_win() is not None:
+            self.print_board()
+            if self.board.check_win() == 'draw':
+                print('It\'s a draw!')
+            else:
+                print(f'{self.board.check_win().upper()} won!')
+            return 1
+        self.print_board()
+        print(f'{self.board.turn.upper()}\'s turn\n')
+        # move = self.take_input()
+        if self.board.turn == 'w':
+            move = self.get_white_input()
+        else:
+            move = self.get_black_input()
+        self.make_move(move)
+        if self.board.check_win() is not None:
+            self.print_board()
+            if self.board.check_win() == 'draw':
+                print('It\'s a draw!')
+            else:
+                print(f'{self.board.check_win().upper()} won!')
+            return 1
+        self.board.turn = 'w'
+        return 0
+    
+    def get_white_input(self):
+        board_copy = copy.deepcopy(self.board.board)
+        move = self.get_move_value(board_copy, self.white_mdp[str(board_copy).upper()])
+        print('Computer moved: ', move)
+        return move
+    
+    def get_black_input(self):
+        board_copy = copy.deepcopy(self.board.board)
+        move = self.get_move_value(board_copy, self.black_mdp[str(board_copy).upper()])
+        print('Computer moved: ', move)
+        return move
+
+    def get_move_value(self, before_move, after_move):
+        move = '    '
+        for i in range(4):
+            for j in range(4):
+                if before_move[i][j].upper() != after_move[i][j]:
+                    if after_move[i][j] == '.':
+                        move = f'{move[0]}{move[1]}{i}{j}'
+                    else:
+                        move = f'{i}{j}{move[2]}{move[3]}'
+        return move
 
     def get_possible_states(self):
         states = []
@@ -142,7 +224,10 @@ class Engine:
         self.make_move(move)
         if self.board.check_win() is not None:
             self.print_board()
-            print(f'{self.board.check_win().upper()} won!')
+            if self.board.check_win() == 'draw':
+                print('It\'s a draw!')
+            else:
+                print(f'{self.board.check_win().upper()} won!')
             return 1
         self.board.turn = 'b'
         self.print_board()
@@ -151,7 +236,10 @@ class Engine:
         self.make_move(move)
         if self.board.check_win() is not None:
             self.print_board()
-            print(f'{self.board.check_win().upper()} won!')
+            if self.board.check_win() == 'draw':
+                print('It\'s a draw!')
+            else:
+                print(f'{self.board.check_win().upper()} won!')
             return 1
         self.board.turn = 'w'
         return 0
@@ -201,5 +289,14 @@ class Engine:
   
 if __name__ == '__main__':
     engine = Engine()
-    engine.back_track()
-    # engine.run()
+    # engine.back_track()
+    engine.run_with_strategy()
+    board = Board()
+    board.board = [
+        ['b', 'b', '.', 'b'],
+        ['.', '.', 'b', '.'],
+        ['.', '.', 'w', '.'],
+        ['w', 'w', '.', 'w']
+    ]
+    engine.board = board
+    engine.run_with_strategy()
