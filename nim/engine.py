@@ -1,3 +1,5 @@
+import random
+
 class Engine:
 
     def __init__(self):
@@ -19,12 +21,14 @@ class Engine:
     def round(self):
         self.print_stacks()
         print('Player 1\'s turn\n')
+        self.best_move()
         self.take_input()
         if self.length == 0:
             print('Player 1 won!')
             return 1
         self.print_stacks()
         print('Player 2\'s turn\n')
+        self.best_move()
         self.take_input()
         if self.length == 0:
             print('Player 2 won!')
@@ -51,6 +55,19 @@ class Engine:
             self.stacks.pop(stack-1)
             self.length -= 1
 
+    def best_move(self):
+        heaps = self.stacks
+        x = 0
+        check = []
+        for stack in heaps:
+            x ^= stack
+        if x == 0:
+            return None
+        for i in range(len(heaps)):
+            if (heaps[i] ^ x) < heaps[i]:
+                check.append((i, heaps[i]-(heaps[i]^x)))
+        return check[random.randint(0, len(check)-1)]
+        
 if __name__ == '__main__':
     engine = Engine()
     print()
