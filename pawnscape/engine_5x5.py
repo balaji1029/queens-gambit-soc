@@ -32,36 +32,37 @@ class Stack:
 class Board:
     def __init__(self):
         self.board = [
-            ['b', 'b', 'b', 'b'],
-            ['.', '.', '.', '.'],
-            ['.', '.', '.', '.'],
-            ['w', 'w', 'w', 'w']
+            ['b', 'b', 'b', 'b', 'b'],
+            ['.', '.', '.', '.', '.'],
+            ['.', '.', '.', '.', '.'],
+            ['.', '.', '.', '.', '.'],
+            ['w', 'w', 'w', 'w', 'w']
         ]
         self.turn = 'w'
 
     def possible_moves(self):
         moves = []
-        for i in range(4):
-            for j in range(4):
+        for i in range(5):
+            for j in range(5):
                 if self.board[i][j] == self.turn:
                     if self.turn == 'w':
                         if i - 1 >= 0 and self.board[i-1][j] == '.':
                             # moves.append((i, j, i-1, j))
                             moves.append(f'{i-1}{j}{i}{j}')
-                        if i - 1 >= 0 and j + 1 < 4 and self.board[i-1][j+1] == 'b':
+                        if i - 1 >= 0 and j + 1 < 5 and self.board[i-1][j+1] == 'b':
                             # moves.append((i, j, i-1, j+1))
                             moves.append(f'{i-1}{j+1}{i}{j}')
                         if i - 1 >= 0 and j - 1 >= 0 and self.board[i-1][j-1] == 'b':
                             # moves.append((i, j, i-1, j-1))
                             moves.append(f'{i-1}{j-1}{i}{j}')
                     else:
-                        if i + 1 < 4 and self.board[i+1][j] == '.':
+                        if i + 1 < 5 and self.board[i+1][j] == '.':
                             # moves.append((i, j, i+1, j))
                             moves.append(f'{i+1}{j}{i}{j}')
-                        if i + 1 < 4 and j - 1 >= 0 and self.board[i+1][j-1] == 'w':
+                        if i + 1 < 5 and j - 1 >= 0 and self.board[i+1][j-1] == 'w':
                             # moves.append((i, j, i+1, j-1))
                             moves.append(f'{i+1}{j-1}{i}{j}')
-                        if i + 1 < 4 and j + 1 < 4 and self.board[i+1][j+1] == 'w':
+                        if i + 1 < 5 and j + 1 < 5 and self.board[i+1][j+1] == 'w':
                             # moves.append((i, j, i+1, j+1))
                             moves.append(f'{i+1}{j+1}{i}{j}')
         return moves
@@ -88,10 +89,10 @@ class Board:
         self.turn = 'w' if self.turn == 'b' else 'b'
 
     def __str__(self) -> str:
-        board = '  0 1 2 3\n'
-        for i in range(4):
+        board = '  0 1 2 3 4\n'
+        for i in range(5):
             board += f'{i} '
-            for j in range(4):
+            for j in range(5):
                 board += f'{self.board[i][j]} '
             board += '\n'
         return board.upper()
@@ -124,13 +125,13 @@ class Engine:
         self.stack.push(State(self.board, 'w', []))
         self.states = []
         self.move_history = []
-        black_mdp_file = open('black-mdp.json', 'r')
+        black_mdp_file = open('black-mdp-5x5.json', 'r')
         self.black_mdp = json.load(black_mdp_file)
         black_mdp_file.close()
-        white_mdp_file = open('white-mdp.json', 'r')
+        white_mdp_file = open('white-mdp-5x5.json', 'r')
         self.white_mdp = json.load(white_mdp_file)
         white_mdp_file.close()
-
+    
     # def __init__(self, board, turn, move_history):
     #     self.board = board
     #     self.stack = Stack()
@@ -196,20 +197,20 @@ class Engine:
     
     def get_white_input(self):
         board_copy = copy.deepcopy(self.board.board)
-        move = self.get_move_value(board_copy, self.white_mdp[str(board_copy).upper()])
+        move = self.get_move_value(board_copy, self.white_mdp[str(board_copy).upper()][0])
         print('Computer moved: ', move)
         return move
     
     def get_black_input(self):
         board_copy = copy.deepcopy(self.board.board)
-        move = self.get_move_value(board_copy, self.black_mdp[str(board_copy).upper()])
+        move = self.get_move_value(board_copy, self.black_mdp[str(board_copy).upper()][0])
         print('Computer moved: ', move)
         return move
 
     def get_move_value(self, before_move, after_move):
         move = '    '
-        for i in range(4):
-            for j in range(4):
+        for i in range(5):
+            for j in range(5):
                 if before_move[i][j].upper() != after_move[i][j]:
                     if after_move[i][j] == '.':
                         move = f'{move[0]}{move[1]}{i}{j}'
@@ -302,11 +303,11 @@ if __name__ == '__main__':
     # engine.back_track()
     engine.run_with_strategy()
     board = Board()
-    board.board = [
-        ['b', 'b', '.', 'b'],
-        ['.', '.', 'b', '.'],
-        ['.', '.', 'w', '.'],
-        ['w', 'w', '.', 'w']
-    ]
+    # board.board = [
+    #     ['b', 'b', '.', 'b'],
+    #     ['.', '.', 'b', '.'],
+    #     ['.', '.', 'w', '.'],
+    #     ['w', 'w', '.', 'w']
+    # ]
     engine.board = board
     engine.run_with_strategy()
