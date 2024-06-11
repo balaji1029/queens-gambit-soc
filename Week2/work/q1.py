@@ -218,9 +218,6 @@ def backward_induction(history_obj):
                     child_utility, cmove = utilities[board_string]
                 #     if cmove is not None:
                 #         strategy_dict_o[str(child)] = get_dict(move)
-                # else:
-                #     if str(child)[:-1] == '0412':
-                #         print('Hey', str(child))
                 else:
                     child_utility = backward_induction(child)
                 if child_utility > best_utility:
@@ -233,10 +230,6 @@ def backward_induction(history_obj):
             for move in history_obj.get_valid_actions():
                 child = history_obj.update_history(move)
                 board_string = child.get_board_string()
-                # if str(child) == "041263":
-                #     print('Hey')
-                # if str(history_obj) == "04126":
-                #     print('Heyy')
                 if str(child) in utilities:
                     child_utility, cmove = utilities[board_string]
                 #     if cmove is not None:
@@ -244,7 +237,6 @@ def backward_induction(history_obj):
                 else:
                     child_utility = backward_induction(child)
                 # print(child_utility)
-                # time.sleep(0.2)s:
                 if child_utility < best_utility:
                     best_move = move
                     best_utility = child_utility
@@ -257,7 +249,7 @@ def backward_induction(history_obj):
     return best_utility
     # TODO implement
 
-import itertools
+# import itertools
 
 
 def are_permutations(history, other):

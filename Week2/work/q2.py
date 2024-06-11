@@ -12,6 +12,7 @@ board_positions_val_dict = {}
 # Global variable to store the visited histories in the process of alpha beta pruning.
 visited_histories_list = []
 
+mdp = {}
 
 class History:
     def __init__(self, num_boards=2, history=None):
@@ -160,19 +161,63 @@ class History:
 
     def is_win(self):
         # Feel free to implement this in anyway if needed
-        pass
+        for board in self.get_boards():
+            if not self.is_board_win(board):
+                return False
+        return True
 
     def get_valid_actions(self):
         # Feel free to implement this in anyway if needed
-        pass
+        valid_actions = []
+        for i in range(self.num_boards):
+            if self.check_active_boards()[i] == 1:
+                for j in range(9):
+                    if self.boards[i][j] == '0':
+                        valid_actions.append(i * 9 + j)
+        return valid_actions
+
+    def get_valid_actions_(self):
+        valid_actions = []
+        for i in range(self.num_boards):
+            if self.check_active_boards()[i] == 1:
+                for j in range(9):
+                    if self.boards[i][j] == '0':
+                        valid_actions.append(i * 9 + j)
+        new_valid_actions = []
+        for i in range(len(valid_actions)):
+            if valid_actions[i] in [9*j + 4 for j in range(self.num_boards)]:
+                new_valid_actions.append(valid_actions[i])
+        for i in range(len(valid_actions)):
+            corner_list = []
+            corner_list.extend([9*j for j in range(self.num_boards)])
+            corner_list.extend([9*j + 2 for j in range(self.num_boards)])
+            corner_list.extend([9*j + 6 for j in range(self.num_boards)])
+            corner_list.extend([9*j + 8 for j in range(self.num_boards)])
+            if valid_actions[i] in corner_list:
+                new_valid_actions.append(valid_actions[i])
+        for i in range(len(valid_actions)):
+            corner_list = []
+            corner_list.extend([9*j for j in range(self.num_boards)])
+            corner_list.extend([9*j + 2 for j in range(self.num_boards)])
+            corner_list.extend([9*j + 6 for j in range(self.num_boards)])
+            corner_list.extend([9*j + 8 for j in range(self.num_boards)])
+            if not (valid_actions[i] in corner_list or valid_actions[i] in [9*j + 4 for j in range(self.num_boards)]):
+                new_valid_actions.append(valid_actions[i])
+        if set(new_valid_actions) != set(self.get_valid_actions()):
+            print('Hey', new_valid_actions, self.get_valid_actions())
+        return new_valid_actions
 
     def is_terminal_history(self):
         # Feel free to implement this in anyway if needed
-        pass
+        if self.is_win():
+            return True
 
     def get_value_given_terminal_history(self):
         # Feel free to implement this in anyway if needed
-        pass
+        if self.is_win():
+            return 1
+        else:
+            return -1
 
 
 def alpha_beta_pruning(history_obj, alpha, beta, max_player_flag):
@@ -187,10 +232,51 @@ def alpha_beta_pruning(history_obj, alpha, beta, max_player_flag):
     :return: float
     """
     # These two already given lines track the visited histories.
-    global visited_histories_list
-    visited_histories_list.append(history_obj.history)
+    global visited_histories_list, board_positions_val_dict
+    visited_histories_list.append(history_obj.get_boards_str())
     # TODO implement
-    return -2
+    if history_obj.is_terminal_history():
+        if max_player_flag:
+            return 1
+        else:
+            return -1
+    if max_player_flag:
+        v = -math.inf
+        for action in history_obj.get_valid_actions_():
+            new_history = History(history_obj.num_boards, copy.deepcopy(history_obj.history))
+            new_history.history.append(action)
+            new_history.boards = new_history.get_boards()
+            if new_history.get_boards_str() in board_positions_val_dict:
+                value = board_positions_val_dict[new_history.get_boards_str()]
+            else:
+                value = alpha_beta_pruning(new_history, alpha, beta, False)
+            v = max(v, value)
+            alpha = max(alpha, v)
+            if beta <= alpha:
+                break
+        board_positions_val_dict[history_obj.get_boards_str()] = v
+        # mdp[history_obj.get_boards_str()] = action
+        return v
+    else:
+        # if history_obj.get_boards_str() == "xxx"+"0"*6+"0"*9:
+        #     print("here")
+        #     print(history_obj.get_valid_actions())
+        v = math.inf
+        for action in history_obj.get_valid_actions_():
+            new_history = History(history_obj.num_boards, copy.deepcopy(history_obj.history))
+            new_history.history.append(action)
+            new_history.boards = new_history.get_boards()
+            if new_history.get_boards_str() in board_positions_val_dict:
+                value = board_positions_val_dict[new_history.get_boards_str()]
+            else:
+                value = alpha_beta_pruning(new_history, alpha, beta, True)
+            v = min(v, value)
+            beta = min(beta, v)
+            if beta <= alpha:
+                break
+        board_positions_val_dict[history_obj.get_boards_str()] = v
+        # mdp[history_obj.get_boards_str()] = action
+        return v
     # TODO implement
 
 
@@ -207,7 +293,45 @@ def maxmin(history_obj, max_player_flag):
     # the key corresponding to self.boards.
     global board_positions_val_dict
     # TODO implement
-    return -2
+    if history_obj.is_terminal_history():
+        if max_player_flag:
+            return 1
+        else:
+            return -1
+    if max_player_flag:
+        max_val = -math.inf
+        best_action = -1
+        for action in history_obj.get_valid_actions_():
+            new_history = History(copy.deepcopy(history_obj.num_boards), copy.deepcopy(history_obj.history))
+            new_history.history.append(action)
+            new_history.boards = new_history.get_boards()
+            if new_history.get_boards_str() in board_positions_val_dict:
+                val = board_positions_val_dict[new_history.get_boards_str()]
+            else:
+                val = maxmin(new_history, False)
+            if val > max_val:
+                max_val = val
+                best_action = action
+        board_positions_val_dict[history_obj.get_boards_str()] = val
+        mdp[history_obj.get_boards_str()] = best_action
+        return max_val
+    else:
+        min_val = math.inf
+        best_action = -1
+        for action in history_obj.get_valid_actions_():
+            new_history = History(copy.deepcopy(history_obj.num_boards), copy.deepcopy(history_obj.history))
+            new_history.history.append(action)
+            new_history.boards = new_history.get_boards()
+            if new_history.get_boards_str() in board_positions_val_dict:
+                val = board_positions_val_dict[new_history.get_boards_str()]
+            else:
+                val = maxmin(new_history, True)
+            if val < min_val:
+                min_val = val
+                best_action = action
+        board_positions_val_dict[history_obj.get_boards_str()] = val
+        mdp[history_obj.get_boards_str()] = best_action
+        return min_val
     # TODO implement
 
 
@@ -216,13 +340,19 @@ def solve_alpha_beta_pruning(history_obj, alpha, beta, max_player_flag):
     val = alpha_beta_pruning(history_obj, alpha, beta, max_player_flag)
     return val, visited_histories_list
 
+import json
 
 if __name__ == "__main__":
     logging.info("start")
     logging.info("alpha beta pruning")
     value, visited_histories = solve_alpha_beta_pruning(History(history=[], num_boards=2), -math.inf, math.inf, True)
+    print(value, len(visited_histories))
     logging.info("maxmin value {}".format(value))
     logging.info("Number of histories visited {}".format(len(visited_histories)))
     logging.info("maxmin memory")
+    board_positions_val_dict = dict()
     logging.info("maxmin value {}".format(maxmin(History(history=[], num_boards=2), True)))
+    print(len(board_positions_val_dict))
+    with open("mdp.json", mode="w") as f:
+        json.dump(mdp, f)
     logging.info("end")
