@@ -1,6 +1,9 @@
 import copy  # use it for deepcopy if needed
 import math
 import logging
+import sys
+
+from matplotlib.pyplot import hist
 
 logging.basicConfig(format='%(levelname)s - %(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
                     level=logging.INFO)
@@ -120,7 +123,7 @@ class History:
         """
         active_board_stat = []
         for i in range(self.num_boards):
-            if self.is_board_win(self.boards[i]):
+            if self.is_board_win(self.get_boards()[i]):
                 active_board_stat.append(0)
             else:
                 active_board_stat.append(1)
@@ -156,7 +159,7 @@ class History:
     def get_boards_str(self):
         boards_str = ""
         for i in range(self.num_boards):
-            boards_str = boards_str + ''.join([str(j) for j in self.boards[i]])
+            boards_str = boards_str + ''.join([str(j) for j in self.get_boards()[i]])
         return boards_str
 
     def is_win(self):
@@ -169,6 +172,7 @@ class History:
     def get_valid_actions(self):
         # Feel free to implement this in anyway if needed
         valid_actions = []
+        self.boards = self.get_boards()
         for i in range(self.num_boards):
             if self.check_active_boards()[i] == 1:
                 for j in range(9):
@@ -181,7 +185,7 @@ class History:
         for i in range(self.num_boards):
             if self.check_active_boards()[i] == 1:
                 for j in range(9):
-                    if self.boards[i][j] == '0':
+                    if self.get_boards()[i][j] == '0':
                         valid_actions.append(i * 9 + j)
         new_valid_actions = []
         for i in range(len(valid_actions)):
@@ -203,8 +207,8 @@ class History:
             corner_list.extend([9*j + 8 for j in range(self.num_boards)])
             if not (valid_actions[i] in corner_list or valid_actions[i] in [9*j + 4 for j in range(self.num_boards)]):
                 new_valid_actions.append(valid_actions[i])
-        if set(new_valid_actions) != set(self.get_valid_actions()):
-            print('Hey', new_valid_actions, self.get_valid_actions())
+        # if set(new_valid_actions) != set(self.get_valid_actions()):
+        #     print('Hey', new_valid_actions, self.get_valid_actions())
         return new_valid_actions
 
     def is_terminal_history(self):
@@ -218,18 +222,150 @@ class History:
             return 1
         else:
             return -1
+        
+def vertical_flip(history_string):
+    return history_string[6:]+history_string[3:6]+history_string[:3]
 
+def horizontal_flip(history_string):
+    return history_string[2::-1]+history_string[5:2:-1]+history_string[8:5:-1]
+
+def diagonal_flip(history_string):
+    return history_string[0::3]+history_string[1::3]+history_string[2::3]
+        
+def get_mirrors(history_string):
+    mirrors = set()
+    board1 = history_string[:9]
+    board2 = history_string[9:]
+    board1_mirrors = set()
+    board2_mirrors = set()
+    board1_mirrors.add(board1)
+    board1_mirrors.add(vertical_flip(board1))
+    board1_mirrors.add(horizontal_flip(board1))
+    board1_mirrors.add(horizontal_flip(vertical_flip(board1)))
+    board1_mirrors.add(diagonal_flip(board1))
+    board1_mirrors.add(diagonal_flip(vertical_flip(board1)))
+    board1_mirrors.add(diagonal_flip(horizontal_flip(board1)))
+    board1_mirrors.add(diagonal_flip(horizontal_flip(vertical_flip(board1))))
+    board1_mirrors = list(board1_mirrors)
+    if board2 == "":
+        return list(board1_mirrors)
+    board2_mirrors = get_mirrors(board2)
+    for i in range(len(board1_mirrors)):
+        for j in range(len(board2_mirrors)):
+            mirrors.add(board1_mirrors[i]+board2_mirrors[j])
+            mirrors.add(board2_mirrors[j]+board1_mirrors[i])
+    return list(mirrors)
+    
+
+
+# def alpha_beta_pruning(history_obj, alpha, beta, max_player_flag):
+#     """
+#         Calculate the maxmin value given a History object using alpha beta pruning. Use the specific move order to
+#         speedup (more pruning, less memory).
+
+#     :param history_obj: History class object
+#     :param alpha: -math.inf
+#     :param beta: math.inf
+#     :param max_player_flag: Bool (True if maximizing player plays)
+#     :return: float
+#     """
+#     # These two already given lines track the visited histories.
+#     global visited_histories_list, board_positions_val_dict
+#     visited_histories_list.append(history_obj.get_boards_str())
+#     # TODO implement
+#     if history_obj.is_terminal_history():
+#         if max_player_flag:
+#             return 1
+#         else:
+#             return -1
+#     # if history_obj.get_boards_str() in board_positions_val_dict:
+#     #     return board_positions_val_dict[history_obj.get_boards_str()][0]
+#     if max_player_flag:
+#         v = -math.inf
+#         for action in history_obj.get_valid_actions_():
+#             new_history = History(history_obj.num_boards, copy.deepcopy(history_obj.history))
+#             new_history.history.append(action)
+#             new_history.boards = new_history.get_boards()
+#             if new_history.get_boards_str() in board_positions_val_dict:
+#                 value, mirror_obj = board_positions_val_dict[new_history.get_boards_str()]
+#                 val1 = alpha_beta_pruning(new_history, alpha, beta, False)
+#                 if value != val1:
+#                     # print(val1, value, new_history.get_boards_str())
+#                     print(mirror_obj.check_active_boards() == new_history.check_active_boards())
+#             else:
+#                 value = alpha_beta_pruning(new_history, alpha, beta, False)
+#             # found = False
+#             # for mirror in get_mirrors(new_history.get_boards_str()):
+#             #     if mirror in board_positions_val_dict:
+#             #         value, mirror_obj = board_positions_val_dict[mirror]
+#             #         val1 = alpha_beta_pruning(History(history_obj.num_boards, copy.deepcopy(new_history.history)), alpha, beta, False)
+#             #         if value != val1:
+#             #             print(val1, value, mirror, new_history.get_boards_str(), mirror_obj.history, new_history.history)
+#             #             print(mirror_obj.get_valid_actions_(), new_history.get_valid_actions_())
+#             #             sys.exit(1)
+#             #         found = True
+#             #         break
+#             # if not found:
+#             #     value = alpha_beta_pruning(History(history_obj.num_boards, copy.deepcopy(new_history.history)), alpha, beta, False)
+#             #     val1 = alpha_beta_pruning(History(history_obj.num_boards, copy.deepcopy(new_history.history)), alpha, beta, False)
+#             #     if value != val1:
+#             #         print('----', val1, value, mirror, new_history.get_boards_str())
+                
+#             v = max(v, value)
+#             alpha = max(alpha, v)
+#             if beta <= alpha:
+#                 break
+#         board_positions_val_dict[history_obj.get_boards_str()] = (v, history_obj)
+#         # mdp[history_obj.get_boards_str()] = action
+#         return v
+#     else:
+#         # if history_obj.get_boards_str() == "xxx"+"0"*6+"0"*9:
+#         #     print("here")
+#         #     print(history_obj.get_valid_actions())
+#         v = math.inf
+#         for action in history_obj.get_valid_actions_():
+#             new_history = History(history_obj.num_boards, copy.deepcopy(history_obj.history))
+#             new_history.history.append(action)
+#             new_history.boards = new_history.get_boards()
+#             if new_history.get_boards_str() in board_positions_val_dict:
+#                 value, mirror_obj = board_positions_val_dict[new_history.get_boards_str()]
+#                 val1 = alpha_beta_pruning(new_history, alpha, beta, True)
+#                 if value != val1:
+#                     # print(val1, value, new_history.get_boards_str())
+#                     print(mirror_obj.check_active_boards() == new_history.check_active_boards())
+#             else:
+#                 value = alpha_beta_pruning(new_history, alpha, beta, True)
+#             # found = False
+#             # for mirror in get_mirrors(new_history.get_boards_str()):
+#             #     if mirror in board_positions_val_dict:
+#             #         value, mirror_obj = board_positions_val_dict[mirror]
+#             #         val1 = alpha_beta_pruning(new_history, alpha, beta, True)
+#             #         if value != val1:
+#             #             print(val1, value, mirror, new_history.get_boards_str(), mirror_obj.history, new_history.history)
+#             #             sys.exit(1)
+#             #         found = True
+#             #         break
+#             # if not found:
+#             #     value = alpha_beta_pruning(History(history_obj.num_boards, copy.deepcopy(new_history.history)), alpha, beta, True)
+#             v = min(v, value)
+#             beta = min(beta, v)
+#             if beta <= alpha:
+#                 break
+#         board_positions_val_dict[history_obj.get_boards_str()] = (v, history_obj)
+#         # mdp[history_obj.get_boards_str()] = action
+#         return v
+#     # TODO implement
 
 def alpha_beta_pruning(history_obj, alpha, beta, max_player_flag):
     """
         Calculate the maxmin value given a History object using alpha beta pruning. Use the specific move order to
         speedup (more pruning, less memory).
-
-    :param history_obj: History class object
-    :param alpha: -math.inf
-    :param beta: math.inf
-    :param max_player_flag: Bool (True if maximizing player plays)
-    :return: float
+        
+        :param history_obj: History class object
+        :param alpha: -math.inf
+        :param beta: math.inf
+        :param max_player_flag: Bool (True if maximizing player plays)
+        :return: float
     """
     # These two already given lines track the visited histories.
     global visited_histories_list, board_positions_val_dict
@@ -240,45 +376,54 @@ def alpha_beta_pruning(history_obj, alpha, beta, max_player_flag):
             return 1
         else:
             return -1
+    child_utilities = []
+    best_utility = -math.inf if max_player_flag else math.inf
     if max_player_flag:
-        v = -math.inf
         for action in history_obj.get_valid_actions_():
-            new_history = History(history_obj.num_boards, copy.deepcopy(history_obj.history))
-            new_history.history.append(action)
-            new_history.boards = new_history.get_boards()
-            if new_history.get_boards_str() in board_positions_val_dict:
-                value = board_positions_val_dict[new_history.get_boards_str()]
-            else:
-                value = alpha_beta_pruning(new_history, alpha, beta, False)
-            v = max(v, value)
-            alpha = max(alpha, v)
+            new_history = copy.deepcopy(history_obj.history)
+            new_history.append(action)
+            child = History(history_obj.num_boards, new_history)
+            # if child.get_boards_str() in board_positions_val_dict:
+            #     value = board_positions_val_dict[child.get_boards_str()]
+            # else:
+            #     value = alpha_beta_pruning(child, alpha, beta, False)
+            mirrors = get_mirrors(child.get_boards_str())
+            found = False
+            for mirror in mirrors:
+                if mirror in board_positions_val_dict:
+                    value = board_positions_val_dict[mirror]
+                    found = True
+            if not found:
+                value = alpha_beta_pruning(child, alpha, beta, False)
+            child_utilities.append(value)
+            best_utility = max(best_utility, value)
+            alpha = max(alpha, best_utility)
             if beta <= alpha:
                 break
-        board_positions_val_dict[history_obj.get_boards_str()] = v
-        # mdp[history_obj.get_boards_str()] = action
-        return v
     else:
-        # if history_obj.get_boards_str() == "xxx"+"0"*6+"0"*9:
-        #     print("here")
-        #     print(history_obj.get_valid_actions())
-        v = math.inf
         for action in history_obj.get_valid_actions_():
-            new_history = History(history_obj.num_boards, copy.deepcopy(history_obj.history))
-            new_history.history.append(action)
-            new_history.boards = new_history.get_boards()
-            if new_history.get_boards_str() in board_positions_val_dict:
-                value = board_positions_val_dict[new_history.get_boards_str()]
-            else:
-                value = alpha_beta_pruning(new_history, alpha, beta, True)
-            v = min(v, value)
-            beta = min(beta, v)
+            new_history = copy.deepcopy(history_obj.history)
+            new_history.append(action)
+            child = History(history_obj.num_boards, new_history)
+            # if child.get_boards_str() in board_positions_val_dict:
+            #     value = board_positions_val_dict[child.get_boards_str()]
+            # else:
+            #     value = alpha_beta_pruning(child, alpha, beta, True)
+            mirrors = get_mirrors(child.get_boards_str())
+            found = False
+            for mirror in mirrors:
+                if mirror in board_positions_val_dict:
+                    value = board_positions_val_dict[mirror]
+                    found = True
+            if not found:
+                value = alpha_beta_pruning(child, alpha, beta, True)
+            child_utilities.append(value)
+            best_utility = min(best_utility, value)
+            beta = min(beta, best_utility)
             if beta <= alpha:
                 break
-        board_positions_val_dict[history_obj.get_boards_str()] = v
-        # mdp[history_obj.get_boards_str()] = action
-        return v
-    # TODO implement
-
+    board_positions_val_dict[history_obj.get_boards_str()] = best_utility
+    return best_utility
 
 def maxmin(history_obj, max_player_flag):
     """
@@ -293,44 +438,67 @@ def maxmin(history_obj, max_player_flag):
     # the key corresponding to self.boards.
     global board_positions_val_dict
     # TODO implement
+    if max_player_flag == (len(history_obj.history) % 2 == 1):
+        print('Hey')
     if history_obj.is_terminal_history():
-        if max_player_flag:
-            return 1
-        else:
+        if len(history_obj.history) % 2 == 0:
             return -1
+        else:
+            return 1
+    # if history_obj.get_boards_str() in board_positions_val_dict:
+    #     return board_positions_val_dict[history_obj.get_boards_str()][0]
     if max_player_flag:
         max_val = -math.inf
-        best_action = -1
+        # best_action = -1
         for action in history_obj.get_valid_actions_():
             new_history = History(copy.deepcopy(history_obj.num_boards), copy.deepcopy(history_obj.history))
             new_history.history.append(action)
             new_history.boards = new_history.get_boards()
-            if new_history.get_boards_str() in board_positions_val_dict:
-                val = board_positions_val_dict[new_history.get_boards_str()]
-            else:
+            found = False
+            for mirror in get_mirrors(new_history.get_boards_str()):
+                if mirror in board_positions_val_dict:
+                    val = board_positions_val_dict[mirror]
+                    found = True
+                    break
+            if not found:
                 val = maxmin(new_history, False)
             if val > max_val:
                 max_val = val
-                best_action = action
-        board_positions_val_dict[history_obj.get_boards_str()] = val
-        mdp[history_obj.get_boards_str()] = best_action
+                # best_action = action
+        # print(max_val, history_obj.get_boards_str(), history_obj.history)
+        board_positions_val_dict[history_obj.get_boards_str()] = max_val
+        # mdp[history_obj.get_boards_str()] = best_action
         return max_val
     else:
         min_val = math.inf
-        best_action = -1
+        # best_action = -1
         for action in history_obj.get_valid_actions_():
             new_history = History(copy.deepcopy(history_obj.num_boards), copy.deepcopy(history_obj.history))
             new_history.history.append(action)
             new_history.boards = new_history.get_boards()
-            if new_history.get_boards_str() in board_positions_val_dict:
-                val = board_positions_val_dict[new_history.get_boards_str()]
-            else:
+            # if new_history.get_boards_str() in board_positions_val_dict:
+            #     val = board_positions_val_dict[new_history.get_boards_str()]
+            #     val1 = maxmin(new_history, not max_player_flag)
+            #     if val != val1:
+            #         # print(val1, val, new_history.get_boards_str(), mirror.get_boards_str(), new_history.history, mirror.history)
+            #         sys.exit(1)
+            # else:
+            #     val = maxmin(new_history, not max_player_flag)
+                # sys.exit(1)
+            found = False
+            for mirror in get_mirrors(new_history.get_boards_str()):
+                if mirror in board_positions_val_dict:
+                    val = board_positions_val_dict[mirror]
+                    found = True
+                    break
+            if not found:
                 val = maxmin(new_history, True)
             if val < min_val:
                 min_val = val
-                best_action = action
-        board_positions_val_dict[history_obj.get_boards_str()] = val
-        mdp[history_obj.get_boards_str()] = best_action
+                # best_action = action
+        # print(min_val, history_obj.get_boards_str(), history_obj.history)
+        board_positions_val_dict[history_obj.get_boards_str()] = min_val
+        # mdp[history_obj.get_boards_str()] = best_action
         return min_val
     # TODO implement
 
@@ -341,11 +509,14 @@ def solve_alpha_beta_pruning(history_obj, alpha, beta, max_player_flag):
     return val, visited_histories_list
 
 import json
+import time
 
 if __name__ == "__main__":
-    logging.info("start")
+    logging.info(msg="start")
     logging.info("alpha beta pruning")
+    start_time = time.time()
     value, visited_histories = solve_alpha_beta_pruning(History(history=[], num_boards=2), -math.inf, math.inf, True)
+    print(time.time() - start_time)
     print(value, len(visited_histories))
     logging.info("maxmin value {}".format(value))
     logging.info("Number of histories visited {}".format(len(visited_histories)))
@@ -353,6 +524,6 @@ if __name__ == "__main__":
     board_positions_val_dict = dict()
     logging.info("maxmin value {}".format(maxmin(History(history=[], num_boards=2), True)))
     print(len(board_positions_val_dict))
-    with open("mdp.json", mode="w") as f:
-        json.dump(mdp, f)
-    logging.info("end")
+    # with open("mdp.json", mode="w") as f:
+    #     json.dump(mdp, f)
+    # logging.info("end")
