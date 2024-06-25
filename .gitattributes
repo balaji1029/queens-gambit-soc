@@ -1,2 +1,8 @@
 *.csv filter=lfs diff=lfs merge=lfs -text
 *.json filter=lfs diff=lfs merge=lfs -text
+Week1/mdp.json filter=lfs diff=lfs merge=lfs -text
+Week1/pawnscape/black-mdp.json filter=lfs diff=lfs merge=lfs -text
+Week1/pawnscape/mdp.json filter=lfs diff=lfs merge=lfs -text
+Week1/pawnscape/white-mdp-5x5.json filter=lfs diff=lfs merge=lfs -text
+Week1/pawnscape/white-mdp.json filter=lfs diff=lfs merge=lfs -text
+Week1/pawnscape/black-mdp-5x5.json filter=lfs diff=lfs merge=lfs -text
