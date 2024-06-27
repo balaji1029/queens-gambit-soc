@@ -1,19 +1,12 @@
-from turtle import end_fill
 import chess
 import chess.svg
 import math
-import random
 import numpy as np
-
-from numpy import mat
-from zmq import has
 
 storage = dict()
 
 class Engine:
-
     pieces = np.load('pieces.npy')
-    en_passant = np.load('en_passant.npy')
 
     def __init__(self, fen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq'):
         self.board = chess.Board(fen)
@@ -30,31 +23,32 @@ class Engine:
     @staticmethod
     def get_index(piece):
         piece_map = {'p': 0, 'n': 1, 'b': 2, 'r': 3, 'q': 4, 'k': 5, 'P': 6, 'N': 7, 'B': 8, 'R': 9, 'Q': 10, 'K': 11}
+        # print(piece, str(piece))
         return piece_map[str(piece)]
     
     def make_move(self, move):
         hash = self.hash >> 8
         if self.board.is_castling(move):
             if move.uci() == 'e1g1' and self.board.piece_at(chess.E1) == chess.Piece(chess.KING, chess.WHITE):
-                hash ^= int(self.pieces[chess.E1][self.get_index(chess.KING | chess.WHITE)])
-                hash ^= int(self.pieces[chess.G1][self.get_index(chess.KING | chess.WHITE)])
-                hash ^= int(self.pieces[chess.H1][self.get_index(chess.ROOK | chess.WHITE)])
-                hash ^= int(self.pieces[chess.F1][self.get_index(chess.ROOK | chess.WHITE)])
+                hash ^= int(self.pieces[chess.E1][self.get_index(chess.Piece(chess.KING, chess.WHITE))])
+                hash ^= int(self.pieces[chess.G1][self.get_index(chess.Piece(chess.KING, chess.WHITE))])
+                hash ^= int(self.pieces[chess.H1][self.get_index(chess.Piece(chess.ROOK, chess.WHITE))])
+                hash ^= int(self.pieces[chess.F1][self.get_index(chess.Piece(chess.ROOK, chess.WHITE))])
             elif move.uci() == 'e1c1' and self.board.piece_at(chess.E1) == chess.Piece(chess.KING, chess.WHITE):
-                hash ^= int(self.pieces[chess.E1][self.get_index(chess.KING | chess.WHITE)])
-                hash ^= int(self.pieces[chess.C1][self.get_index(chess.KING | chess.WHITE)])
-                hash ^= int(self.pieces[chess.A1][self.get_index(chess.ROOK | chess.WHITE)])
-                hash ^= int(self.pieces[chess.D1][self.get_index(chess.ROOK | chess.WHITE)])
+                hash ^= int(self.pieces[chess.E1][self.get_index(chess.Piece(chess.KING, chess.WHITE))])
+                hash ^= int(self.pieces[chess.C1][self.get_index(chess.Piece(chess.KING, chess.WHITE))])
+                hash ^= int(self.pieces[chess.A1][self.get_index(chess.Piece(chess.ROOK, chess.WHITE))])
+                hash ^= int(self.pieces[chess.D1][self.get_index(chess.Piece(chess.ROOK, chess.WHITE))])
             elif move.uci() == 'e8g8' and self.board.piece_at(chess.E8) == chess.Piece(chess.KING, chess.BLACK):
-                hash ^= int(self.pieces[chess.E8][self.get_index(chess.KING | chess.BLACK)])
-                hash ^= int(self.pieces[chess.G8][self.get_index(chess.KING | chess.BLACK)])
-                hash ^= int(self.pieces[chess.H8][self.get_index(chess.ROOK | chess.BLACK)])
-                hash ^= int(self.pieces[chess.F8][self.get_index(chess.ROOK | chess.BLACK)])
+                hash ^= int(self.pieces[chess.E8][self.get_index(chess.Piece(chess.KING, chess.BLACK))])
+                hash ^= int(self.pieces[chess.G8][self.get_index(chess.Piece(chess.KING, chess.BLACK))])
+                hash ^= int(self.pieces[chess.H8][self.get_index(chess.Piece(chess.ROOK, chess.BLACK))])
+                hash ^= int(self.pieces[chess.F8][self.get_index(chess.Piece(chess.ROOK, chess.BLACK))])
             elif move.uci() == 'e8c8' and self.board.piece_at(chess.E8) == chess.Piece(chess.KING, chess.BLACK):
-                hash ^= int(self.pieces[chess.E8][self.get_index(chess.KING | chess.BLACK)])
-                hash ^= int(self.pieces[chess.C8][self.get_index(chess.KING | chess.BLACK)])
-                hash ^= int(self.pieces[chess.A8][self.get_index(chess.ROOK | chess.BLACK)])
-                hash ^= int(self.pieces[chess.D8][self.get_index(chess.ROOK | chess.BLACK)])
+                hash ^= int(self.pieces[chess.E8][self.get_index(chess.Piece(chess.KING, chess.BLACK))])
+                hash ^= int(self.pieces[chess.C8][self.get_index(chess.Piece(chess.KING, chess.BLACK))])
+                hash ^= int(self.pieces[chess.A8][self.get_index(chess.Piece(chess.ROOK, chess.BLACK))])
+                hash ^= int(self.pieces[chess.D8][self.get_index(chess.Piece(chess.ROOK, chess.BLACK))])
         elif self.board.is_en_passant(move):
             hash ^= int(self.pieces[move.from_square][self.get_index(self.board.piece_at(move.from_square))])
             hash ^= int(self.pieces[move.to_square][self.get_index(self.board.piece_at(move.from_square))])
@@ -103,25 +97,26 @@ class Engine:
         move = board1.pop()
         if self.board.is_castling(move):
             if move.uci() == 'e1g1' and board1.piece_at(chess.E1) == chess.Piece(chess.KING, chess.WHITE):
-                hash ^= int(x=self.pieces[chess.E1][self.get_index(chess.KING | chess.WHITE)])
-                hash ^= int(self.pieces[chess.G1][self.get_index(chess.KING | chess.WHITE)])
-                hash ^= int(self.pieces[chess.H1][self.get_index(chess.ROOK | chess.WHITE)])
-                hash ^= int(self.pieces[chess.F1][self.get_index(chess.ROOK | chess.WHITE)])
+                hash ^= int(self.pieces[chess.E1][self.get_index(chess.Piece(chess.KING, chess.WHITE))])
+                hash ^= int(self.pieces[chess.G1][self.get_index(chess.Piece(chess.KING, chess.WHITE))])
+                hash ^= int(self.pieces[chess.H1][self.get_index(chess.Piece(chess.ROOK, chess.WHITE))])
+                hash ^= int(self.pieces[chess.F1][self.get_index(chess.Piece(chess.ROOK, chess.WHITE))])
             elif move.uci() == 'e1c1' and board1.piece_at(chess.E1) == chess.Piece(chess.KING, chess.WHITE):
-                hash ^= int(self.pieces[chess.E1][self.get_index(chess.KING | chess.WHITE)])
-                hash ^= int(self.pieces[chess.C1][self.get_index(chess.KING | chess.WHITE)])
-                hash ^= int(self.pieces[chess.A1][self.get_index(chess.ROOK | chess.WHITE)])
-                hash ^= int(self.pieces[chess.D1][self.get_index(chess.ROOK | chess.WHITE)])
+                hash ^= int(self.pieces[chess.E1][self.get_index(chess.Piece(chess.KING, chess.WHITE))])
+                hash ^= int(self.pieces[chess.C1][self.get_index(chess.Piece(chess.KING, chess.WHITE))])
+                hash ^= int(self.pieces[chess.A1][self.get_index(chess.Piece(chess.ROOK, chess.WHITE))])
+                hash ^= int(self.pieces[chess.D1][self.get_index(chess.Piece(chess.ROOK, chess.WHITE))])
             elif move.uci() == 'e8g8' and board1.piece_at(chess.E8) == chess.Piece(chess.KING, chess.BLACK):
-                hash ^= int(self.pieces[chess.E8][self.get_index(chess.KING | chess.BLACK)])
-                hash ^= int(self.pieces[chess.G8][self.get_index(chess.KING | chess.BLACK)])
-                hash ^= int(self.pieces[chess.H8][self.get_index(chess.ROOK | chess.BLACK)])
-                hash ^= int(self.pieces[chess.F8][self.get_index(chess.ROOK | chess.BLACK)])
+                hash ^= int(self.pieces[chess.E8][self.get_index(chess.Piece(chess.KING, chess.BLACK))])
+                hash ^= int(self.pieces[chess.G8][self.get_index(chess.Piece(chess.KING, chess.BLACK))])
+                hash ^= int(self.pieces[chess.H8][self.get_index(chess.Piece(chess.ROOK, chess.BLACK))])
+                hash ^= int(self.pieces[chess.F8][self.get_index(chess.Piece(chess.ROOK, chess.BLACK))])
             elif move.uci() == 'e8c8' and board1.piece_at(chess.E8) == chess.Piece(chess.KING, chess.BLACK):
-                hash ^= int(self.pieces[chess.E8][self.get_index(chess.KING | chess.BLACK)])
-                hash ^= int(self.pieces[chess.C8][self.get_index(chess.KING | chess.BLACK)])
-                hash ^= int(self.pieces[chess.A8][self.get_index(chess.ROOK | chess.BLACK)])
-                hash ^= int(self.pieces[chess.D8][self.get_index(chess.ROOK | chess.BLACK)])
+                hash ^= int(self.pieces[chess.E8][self.get_index(chess.Piece(chess.KING, chess.BLACK))])
+                hash ^= int(self.pieces[chess.C8][self.get_index(chess.Piece(chess.KING, chess.BLACK))])
+                hash ^= int(self.pieces[chess.A8][self.get_index(chess.Piece(chess.ROOK, chess.BLACK))])
+                hash ^= int(self.pieces[chess.D8][self.get_index(chess.Piece(chess.ROOK, chess.BLACK))])
+            
         elif board1.is_en_passant(move):
             hash ^= int(self.pieces[move.from_square][self.get_index(board1.piece_at(move.from_square))])
             hash ^= int(self.pieces[move.to_square][self.get_index(board1.piece_at(move.from_square))])
@@ -204,13 +199,16 @@ class Engine:
         for move in legal_moves:
             self.make_move(move)
             if self.board.is_checkmate():
-                moves_dict[move] += -math.inf
+                self.undo_move()
+                return [move]
+                # moves_dict[move] -= math.inf
             self.undo_move()
         for move in legal_moves:
             self.make_move(move)
             if self.board.is_check():
-                moves_dict[move] += -math.inf
+                moves_dict[move] -= 10**64
             self.undo_move()
+        # print(sorted(moves_dict, key=lambda x: moves_dict[x]))
         return sorted(moves_dict, key=lambda x: moves_dict[x])
 
     def eval(self, max_player):
@@ -232,24 +230,32 @@ class Engine:
         for key in map:
             count[str(map[key])] += 1
         for piece in pieces:
-            score += (count[piece.upper()] - count[piece]) * ref[piece]
+            if max_player and self.board.turn == chess.WHITE:
+                score += (count[piece.upper()] - count[piece]) * ref[piece]
+            elif max_player and self.board.turn == chess.BLACK:
+                score += (count[piece] - count[piece.upper()]) * ref[piece]
+            elif not max_player and self.board.turn == chess.WHITE:
+                score += (count[piece] - count[piece.upper()]) * ref[piece]
+            elif not max_player and self.board.turn == chess.BLACK:
+                score += (count[piece.upper()] - count[piece]) * ref[piece]
         return score
 
     def alpha_beta_pruning(self, alpha, beta, depth, max_player):
         global storage
+        # print(self.hash)
         if depth == 0 or self.board.is_game_over():
             return self.eval(max_player), None
+        if self.hash == 2956996370746770784263:
+            print('hehehe')
         if max_player:
             max_eval = -math.inf
             best_move = None
             for move in self.get_ordered_moves():
-                # print(move, self.get_ordered_moves())
                 new = self.get_child(move)
-                if new.hash in storage:
-                    # print('here')
+                if (new.hash) in storage:
                     eval, _move = storage[new.hash]
                 else:
-                    eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, False)
+                    eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, not max_player)
                 if eval >= max_eval:
                     best_move = move
                 max_eval = max(max_eval, eval)
@@ -263,11 +269,10 @@ class Engine:
             best_move = None
             for move in self.get_ordered_moves():
                 new = self.get_child(move)
-                if new.hash in storage:
-                    # print('here')
+                if (new.hash) in storage:
                     eval, _move = storage[new.hash]
                 else:
-                    eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, True)
+                    eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, not max_player)
                 if eval <= min_eval:
                     best_move = move
                 min_eval = min(min_eval, eval)
@@ -278,16 +283,17 @@ class Engine:
             return min_eval, best_move
     
     def alphabet(self, depth):
-        _val, moves = self.alpha_beta_pruning(-math.inf, math.inf, depth, True)
-        # print(moves)
         global storage
-        # print(storage)
-        for i in range(3):
-            # print(self.board.move_stack, self.board.fen())
-            self.make_move(storage[self.hash][1])
-            # print(self.hash)
-            # print(self.board.fen())
-        return _val, moves
+        _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth, True)
+        for i in range(depth):
+            self.make_move(move)
+            if self.board.is_game_over():
+                return move
+            _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth-i, True)
+    
+    def get_move(self, depth):
+        _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth, True)
+        return _val, move
 
     def __str__(self):
         return self.board
