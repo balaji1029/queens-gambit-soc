@@ -6,27 +6,34 @@ import numpy as np
 storage = dict()
 
 class Engine:
+    """A class to represent a chess engine written by Balaji."""
+
     pieces = np.load('pieces.npy')
 
     def __init__(self, fen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq'):
+        """Initializes the board with the given FEN string. If no FEN string is given, initializes the board with the default starting position."""
         self.board = chess.Board(fen)
         self.hash = self.get_hash()
 
-    def get_child(self, move):
+    def get_child(self, move) -> 'Engine':
+        """Returns a new board with the move executed on the current board."""
         new = Engine(self.board.fen())
         new.make_move(move)
         return new
 
-    def get_legal_moves(self):
+    def get_legal_moves(self) -> list:
+        """Returns a list of legal moves from the current board."""
         return list(self.board.legal_moves)
     
     @staticmethod
-    def get_index(piece):
+    def get_index(piece) -> int:
+        """Returns the index of the piece in the pieces array."""
         piece_map = {'p': 0, 'n': 1, 'b': 2, 'r': 3, 'q': 4, 'k': 5, 'P': 6, 'N': 7, 'B': 8, 'R': 9, 'Q': 10, 'K': 11}
         # print(piece, str(piece))
         return piece_map[str(piece)]
     
-    def make_move(self, move):
+    def make_move(self, move) -> int:
+        """Makes the move on the board and updates the hash."""
         hash = self.hash >> 8
         if self.board.is_castling(move):
             if move.uci() == 'e1g1' and self.board.piece_at(chess.E1) == chess.Piece(chess.KING, chess.WHITE):
@@ -91,7 +98,8 @@ class Engine:
         # self.hash = self.get_hash()
         return hash
     
-    def undo_move(self):
+    def undo_move(self) -> int:
+        """Undoes the last move and updates the hash."""
         hash = self.hash >> 8
         board1 = self.board.copy()
         move = board1.pop()
@@ -159,7 +167,8 @@ class Engine:
         return hash
     
     # Zobrist Hashing
-    def get_hash(self):
+    def get_hash(self) -> int:
+        """Returns the Zobrist hash of the current board position."""
         hash = 0
         map = self.board.piece_map()
         for key in map:
@@ -189,29 +198,23 @@ class Engine:
         return hash
     
 
-    def get_ordered_moves(self):
+    def get_ordered_moves(self) -> list:
+        """Returns a list of legal moves ordered according to the number of legal moves in the next state, then by check. If a move leads to a checkmate, it is returned immediately."""
         legal_moves = self.get_legal_moves()
         moves_dict = dict()
         for move in legal_moves:
-            self.make_move(move)
-            moves_dict[move] = len(self.get_legal_moves())
-            self.undo_move()
-        for move in legal_moves:
-            self.make_move(move)
+            self.board.push(move)
             if self.board.is_checkmate():
-                self.undo_move()
+                self.board.pop()
                 return [move]
-                # moves_dict[move] -= math.inf
-            self.undo_move()
-        for move in legal_moves:
-            self.make_move(move)
+            moves_dict[move] = len(self.get_legal_moves())
             if self.board.is_check():
                 moves_dict[move] -= 10**64
-            self.undo_move()
-        # print(sorted(moves_dict, key=lambda x: moves_dict[x]))
+            self.board.pop()
         return sorted(moves_dict, key=lambda x: moves_dict[x])
 
-    def eval(self, max_player):
+    def eval(self, max_player) -> int:
+        """Returns the static evaluation of the current board position."""
         if self.board.is_checkmate():
             if max_player:
                 return -math.inf
@@ -240,7 +243,8 @@ class Engine:
                 score += (count[piece.upper()] - count[piece]) * ref[piece]
         return score
 
-    def alpha_beta_pruning(self, alpha, beta, depth, max_player):
+    def alpha_beta_pruning(self, alpha, beta, depth, max_player) -> tuple:
+        """Returns the evaluation of the current board position and the best move for the current player, using alpha-beta pruning with a depth of `depth`, and the player to maximize the evaluation is `max_player`."""
         global storage
         # print(self.hash)
         if depth == 0 or self.board.is_game_over():
@@ -282,24 +286,28 @@ class Engine:
             storage[self.hash] = (min_eval, best_move)
             return min_eval, best_move
     
-    def alphabet(self, depth):
+    def alphabet(self, depth) -> None:
+        """Makes the best move for the current player using alpha-beta pruning until the depth of `depth`."""
         global storage
         _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth, True)
         for i in range(depth):
             self.make_move(move)
             if self.board.is_game_over():
-                return move
+                return
             _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth-i, True)
     
     def get_move(self, depth):
+        """Returns the best move for the current player using alpha-beta pruning with a depth of `depth`."""
         _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth, True)
         return _val, move
 
-    def __str__(self):
-        return self.board
+    def __str__(self) -> str:
+        """Returns the string representation of the board."""
+        return self.board.__str__()
 
-    def __repr__(self):
-        return self.board
+    def __repr__(self) -> str:
+        """Returns the string representation of the board."""
+        return self.board.__repr__()
     
 if __name__ == '__main__':
     engine = Engine('4r1rk/5K1b/7R/R7/8/8/8/8 w - - 0 1')

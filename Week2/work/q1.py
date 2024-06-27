@@ -221,7 +221,7 @@ def backward_induction(history_obj):
                 else:
                     child_utility = backward_induction(child)
                 if child_utility > best_utility:
-                    best_move = move
+                    best_move = move    
                     best_utility = child_utility
             strategy_dict_x[str(history_obj)] = get_dict(best_move)
         else:
