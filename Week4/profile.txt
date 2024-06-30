@@ -1,0 +1,21 @@
+Sat Jun 29 21:57:15 2024    profile_data.prof
+
+         25166310 function calls (25015935 primitive calls) in 24.846 seconds
+
+   Ordered by: cumulative time
+   List reduced from 4166 to 11 due to restriction <'my_chess_engine.py'>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      351    0.006    0.000   15.215    0.043 my_chess_engine.py:298(alphabet)
+16347/1053    0.102    0.000   15.074    0.014 my_chess_engine.py:257(alpha_beta_pruning)
+     3724    0.572    0.000   10.054    0.003 my_chess_engine.py:215(get_ordered_moves)
+    12623    0.266    0.000    2.557    0.000 my_chess_engine.py:230(eval)
+    15648    0.038    0.000    2.067    0.000 my_chess_engine.py:26(get_child)
+    16701    0.211    0.000    0.832    0.000 my_chess_engine.py:43(make_move)
+      351    0.001    0.000    0.105    0.000 my_chess_engine.py:21(__init__)
+      351    0.009    0.000    0.044    0.000 my_chess_engine.py:184(get_hash)
+    32653    0.013    0.000    0.033    0.000 my_chess_engine.py:228(<lambda>)
+        1    0.000    0.000    0.001    0.001 my_chess_engine.py:1(<module>)
+        1    0.000    0.000    0.000    0.000 my_chess_engine.py:10(Engine)
+
+

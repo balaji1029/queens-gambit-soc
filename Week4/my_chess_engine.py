@@ -217,13 +217,12 @@ class Engine:
         moves_dict = dict()
         board = copy.deepcopy(self.board)
         for move in self.board.legal_moves:
-            san = board.san(move)
             board.push(move)
-            if san[-1] == '#':
+            if board.is_checkmate():
                 board.pop()
                 return [move]
             moves_dict[move] = len(list(board.legal_moves))
-            if san[-1] == '+':
+            if board.is_check():
                 moves_dict[move] -= 1<<20
             board.pop()
         return sorted(moves_dict, key=lambda x: moves_dict[x])
