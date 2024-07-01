@@ -265,8 +265,9 @@ class Engine:
             best_move = None
             for move in self.get_ordered_moves():
                 new = self.get_child(move)
-                if (new.hash) in storage:
-                    eval, _move = storage[new.hash]
+                if ((new.hash << 3) + (depth-1)) in storage:
+                    # print('Found')
+                    eval, _move = storage[(new.hash << 3) + (depth-1)]
                 else:
                     eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, not max_player)
                 if eval >= max_eval:
@@ -275,15 +276,16 @@ class Engine:
                 alpha = max(alpha, eval)
                 if beta <= alpha:
                     break
-            storage[self.hash] = (max_eval, best_move)
+            storage[(self.hash << 3) + depth] = (max_eval, best_move)
             return max_eval, best_move
         else:
             min_eval = math.inf
             best_move = None
             for move in self.get_ordered_moves():
                 new = self.get_child(move)
-                if (new.hash) in storage:
-                    eval, _move = storage[new.hash]
+                if ((new.hash << 3) + (depth-1)) in storage:
+                    # print('Found')
+                    eval, _move = storage[(new.hash << 3) + (depth-1)]
                 else:
                     eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, not max_player)
                 if eval <= min_eval:
@@ -292,7 +294,7 @@ class Engine:
                 beta = min(beta, eval)
                 if beta <= alpha:
                     break
-            storage[self.hash] = (min_eval, best_move)
+            storage[(self.hash << 3) + depth] = (min_eval, best_move)
             return min_eval, best_move
     
     def alphabet(self: 'Engine', depth: int) -> None:
