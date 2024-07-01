@@ -258,6 +258,11 @@ class Engine:
         """Returns the evaluation of the current board position and the best move for the current player, using alpha-beta pruning with a depth of `depth`, and the player to maximize the evaluation is `max_player`."""
         global storage
         # print(self.hash)
+        if ((self.hash << 3) + depth) in storage:
+            # print('Found')
+            # if storage[(self.hash << 3) + depth][1] is None:
+            #     print('None', self.hash, depth)
+            return storage[(self.hash << 3) + depth]
         if depth == 0 or self.board.is_game_over():
             return self.eval(max_player), None
         if max_player:
@@ -300,12 +305,13 @@ class Engine:
     def alphabet(self: 'Engine', depth: int) -> None:
         """Makes the best move for the current player using alpha-beta pruning until the depth of `depth`."""
         global storage
-        _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth, True)
+        # _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth, True)
         for i in range(depth):
-            self.make_move(move)
             if self.board.is_game_over():
                 return
-            _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth-i, True)
+            # print(self.get_move(depth-i))
+            self.make_move(self.get_move(depth-i)[1])
+            # _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth-i, True)
     
     def get_move(self, depth: int):
         """Returns the best move for the current player using alpha-beta pruning with a depth of `depth`."""
