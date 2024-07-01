@@ -239,20 +239,19 @@ class Engine:
         # return 0
         # map = self.board.piece_map()
         fen = self.board.fen().split(' ')[0]
-        ref = {'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 100}
+        ref = {'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900, 'k': 2000}
         count = dict()
         pieces = ['k', 'q', 'r', 'b', 'n', 'p']
+        score = 0
         for ch in fen:
             if ch.lower() in pieces:
                 if ch in count:
                     count[ch] += 1
                 else:
                     count[ch] = 0
-        score = 0
         for piece in pieces:
-            
             score += ((count[piece] if piece in count else 0) - (count[piece.upper()] if piece.upper() in count else 0)) * ref[piece]
-        return -score if (max_player and self.board.turn == chess.WHITE) or (not max_player and self.board.turn == chess.BLACK) else score
+        return -score
 
     def alpha_beta_pruning(self, alpha: float, beta: float, depth: int, max_player: bool) -> tuple:
         """Returns the evaluation of the current board position and the best move for the current player, using alpha-beta pruning with a depth of `depth`, and the player to maximize the evaluation is `max_player`."""
@@ -315,7 +314,7 @@ class Engine:
     
     def get_move(self, depth: int):
         """Returns the best move for the current player using alpha-beta pruning with a depth of `depth`."""
-        _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth, True)
+        _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth, self.hash & 1)
         return _val, move
 
     def __str__(self) -> str:
