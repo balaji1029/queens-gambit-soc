@@ -247,10 +247,9 @@ class Engine:
                 if ch in count:
                     count[ch] += 1
                 else:
-                    count[ch] = 0
+                    count[ch] = 1
         score = 0
         for piece in pieces:
-            
             score += ((count[piece] if piece in count else 0) - (count[piece.upper()] if piece.upper() in count else 0)) * ref[piece]
         return -score if (max_player and self.board.turn == chess.WHITE) or (not max_player and self.board.turn == chess.BLACK) else score
 
@@ -258,11 +257,11 @@ class Engine:
         """Returns the evaluation of the current board position and the best move for the current player, using alpha-beta pruning with a depth of `depth`, and the player to maximize the evaluation is `max_player`."""
         global storage
         # print(self.hash)
-        if ((self.hash << 3) + depth) in storage:
-            # print('Found')
-            # if storage[(self.hash << 3) + depth][1] is None:
-            #     print('None', self.hash, depth)
-            return storage[(self.hash << 3) + depth]
+        # if ((self.hash << 3) + depth) in storage:
+        #     # print('Found')
+        #     # if storage[(self.hash << 3) + depth][1] is None:
+        #     #     print('None', self.hash, depth)
+        #     return storage[(self.hash << 3) + depth]
         if depth == 0 or self.board.is_game_over():
             return self.eval(max_player), None
         if max_player:
@@ -275,12 +274,17 @@ class Engine:
                     eval, _move = storage[(new.hash << 3) + (depth-1)]
                 else:
                     eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, not max_player)
+                if depth == 7:
+                    print(move, eval, alpha, beta)
                 if eval >= max_eval:
                     best_move = move
                 max_eval = max(max_eval, eval)
                 alpha = max(alpha, eval)
                 if beta <= alpha:
+                    # print(beta, alpha, 'Pruned')
                     break
+            # if depth == 7:
+            #     print(move, eval, alpha, beta)
             storage[(self.hash << 3) + depth] = (max_eval, best_move)
             return max_eval, best_move
         else:
@@ -295,9 +299,12 @@ class Engine:
                     eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, not max_player)
                 if eval <= min_eval:
                     best_move = move
+                if depth == 7:
+                    print(move, eval, alpha, beta)
                 min_eval = min(min_eval, eval)
                 beta = min(beta, eval)
                 if beta <= alpha:
+                    # print(beta, alpha, 'Pruned')
                     break
             storage[(self.hash << 3) + depth] = (min_eval, best_move)
             return min_eval, best_move
