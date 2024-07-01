@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title></title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="">
+        <link type="image/x-image" href="">
+        <link type="image/svg+xml" rel="favicon" href="">
+        
+    </head>
+    <body>
+        <img src="board.svg" alt="rock" id="rock">
+        <script src="">
+            function reload(){
+                setInterval(function() {
+                    window.location.reload();
+                    reload();
+                }, 10000);
+            }
+            reload();
+        </script>
+    </body>
+</html>
