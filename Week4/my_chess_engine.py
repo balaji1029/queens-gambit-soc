@@ -1,3 +1,4 @@
+from turtle import st
 import chess
 import chess.svg
 import math
@@ -230,6 +231,7 @@ class Engine:
     def eval(self, max_player: bool) -> int:
         """Returns the static evaluation of the current board position."""
         if self.board.is_checkmate():
+            # print('Checkmate')
             if max_player:
                 return -math.inf
             else:
@@ -239,19 +241,17 @@ class Engine:
         # return 0
         # map = self.board.piece_map()
         fen = self.board.fen().split(' ')[0]
-        ref = {'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900, 'k': 2000}
+        ref = {'p': -100, 'n': -320, 'b': -330, 'r': -500, 'q': -900, 'k': -2000, 'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 2000}
         count = dict()
         pieces = ['k', 'q', 'r', 'b', 'n', 'p']
         score = 0
         for ch in fen:
             if ch.lower() in pieces:
-                if ch in count:
-                    count[ch] += 1
-                else:
-                    count[ch] = 0
-        for piece in pieces:
-            score += ((count[piece] if piece in count else 0) - (count[piece.upper()] if piece.upper() in count else 0)) * ref[piece]
-        return -score
+                score += ref[ch]
+        score += 5 * len(list(self.board.legal_moves))
+        # print(score, fen)
+        # print(-score if max_player else score)
+        return score
 
     def alpha_beta_pruning(self, alpha: float, beta: float, depth: int, max_player: bool) -> tuple:
         """Returns the evaluation of the current board position and the best move for the current player, using alpha-beta pruning with a depth of `depth`, and the player to maximize the evaluation is `max_player`."""
@@ -274,6 +274,8 @@ class Engine:
                     eval, _move = storage[(new.hash << 3) + (depth-1)]
                 else:
                     eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, not max_player)
+                # if depth == 5:
+                #     print(move, eval)
                 if eval >= max_eval:
                     best_move = move
                 max_eval = max(max_eval, eval)
@@ -292,6 +294,8 @@ class Engine:
                     eval, _move = storage[(new.hash << 3) + (depth-1)]
                 else:
                     eval, _move = new.alpha_beta_pruning(alpha, beta, depth - 1, not max_player)
+                # if depth == 5:
+                #     print(move, eval)
                 if eval <= min_eval:
                     best_move = move
                 min_eval = min(min_eval, eval)
@@ -300,6 +304,54 @@ class Engine:
                     break
             storage[(self.hash << 3) + depth] = (min_eval, best_move)
             return min_eval, best_move
+        
+    def negascout(self, alpha: float, beta: float, depth: int, max_player: bool) -> tuple:
+        global storage
+        key = (self.hash << 3) + depth  # Unique key for the current board state and depth
+        
+        # Check if the result is already in storage
+        if key in storage:
+            return storage[key]
+        
+        # Base case: leaf node or game over
+        if depth == 0 or self.board.is_game_over():
+            evaluation = self.eval(max_player)
+            if not max_player:
+                evaluation = -evaluation
+            return evaluation, None
+        
+        best_move = None
+        moves = self.get_ordered_moves()
+        count = 0
+        
+        for move in moves:
+            new = self.get_child(move)
+            
+            if count == 0:
+                # Full window search for the first move
+                eval, _ = new.negascout(-beta, -alpha, depth-1, not max_player)
+                eval = -eval
+            else:
+                # Scout search (null window)
+                eval, _ = new.negascout(-alpha-1, -alpha, depth-1, not max_player)
+                eval = -eval
+                
+                if alpha <= eval and eval <= beta:
+                    # If the evaluation is within the window, perform a full search
+                    eval, _ = new.negascout(-beta, -eval, depth-1, not max_player)
+                    eval = -eval
+            
+            if eval >= alpha:
+                alpha = eval
+                best_move = move
+            
+            if alpha >= beta:
+                break
+            
+            count += 1
+        
+        storage[key] = (alpha, best_move)
+        return alpha, best_move
     
     def alphabet(self: 'Engine', depth: int) -> None:
         """Makes the best move for the current player using alpha-beta pruning until the depth of `depth`."""
@@ -309,12 +361,17 @@ class Engine:
             if self.board.is_game_over():
                 return
             # print(self.get_move(depth-i))
+            # print(self.get_move(depth-i))
             self.make_move(self.get_move(depth-i)[1])
             # _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth-i, True)
     
     def get_move(self, depth: int):
+        global storage
+        # storage = dict()
         """Returns the best move for the current player using alpha-beta pruning with a depth of `depth`."""
         _val, move = self.alpha_beta_pruning(-math.inf, math.inf, depth, self.hash & 1)
+        # print(self.negascout(-math.inf, math.inf, depth, self.hash & 1))
+        # _val, move = self.negascout(-math.inf, math.inf, depth, self.hash & 1)
         return _val, move
 
     def __str__(self) -> str:
