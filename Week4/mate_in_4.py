@@ -5,7 +5,7 @@ from tqdm import tqdm
 import time
 import chess
 import chess.svg
-from my_chess_engine import Engine
+from Week5.my_chess_engine import Engine
 
 start = time.time()
 correct = 0
