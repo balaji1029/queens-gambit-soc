@@ -180,10 +180,10 @@ def PieceDifference(board):
             
             if valuelist:
                 if piece.color == chess.WHITE:
-                    value=piecevalue*valuelist[square]/100
+                    value=piecevalue*(1+valuelist[square]/300)
                     white_score += value
                 else:
-                    value=piecevalue*valuelist[63-square]/100
+                    value=piecevalue*(1+valuelist[63-square]/300)
                     black_score += value
 
 
