@@ -6,6 +6,7 @@
 #include <memory>
 #include "chess-library-master/include/chess.hpp"
 #include <cmath>
+#include <chrono>
 #include <unordered_map>
 
 using namespace chess;
@@ -168,11 +169,56 @@ public:
         return score;
     }
 
-    std::string getBestMove(int maxDepth = 3) {
-        alphaBetaPruning(maxDepth, -INFINITY, INFINITY);
+    std::string getBestMove(int maxDepth = 5) {
+        // alphaBetaPruning(maxDepth, -INFINITY, INFINITY);
         // std::cout << "Hello" << std::endl;
-        return alphaBetaPruning(maxDepth, -INFINITY, INFINITY).second;
-        // return iterativeDeepening(maxDepth).second;
+        // return alphaBetaPruning(maxDepth, -INFINITY, INFINITY).second;
+        auto start = std::chrono::high_resolution_clock::now();
+        if (board.sideToMove() == Color("b")) {
+            float bestScore = 100000000;
+            std::string bestMove = "";
+            for (int depth = 1; depth <= maxDepth; depth++) {
+                std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+                auto end = std::chrono::high_resolution_clock::now();
+                double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                if (duration < 2000) {
+                    maxDepth++;
+                }
+                // std::cout << "Depth: " << depth << std::endl;
+                // std::cout << "Best Score: " << result.first << (bestScore <= 10000000000) << std::endl;
+                if (result.first <= bestScore) {
+                    bestScore = result.first;
+                    bestMove = result.second;
+                }
+                if (bestScore <= -100000000 + 130000) {
+                    // std::cout << "Depth: " << depth << std::endl;
+                    break;
+                }
+            }
+            // std::cout << "Depth: " << depth << std::endl;
+            return bestMove;
+        }
+        float bestScore = -100000000;   
+        std::string bestMove = "";
+        for (int depth = 1; depth <= maxDepth; depth++) {
+            std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+            auto end = std::chrono::high_resolution_clock::now();
+            double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            if (duration < 2000) {
+                maxDepth++;
+            }
+            // std::cout << "Depth: " << depth << std::endl;
+            // std::cout << "Best Score: " << result.first << std::endl;
+            if (result.first >= bestScore) {
+                bestScore = result.first;
+                bestMove = result.second;
+            }
+            if (bestScore >= 100000000 - 130000) {
+                std::cout << "Depth: " << depth << std::endl;
+                break;
+            }
+        }
+        return bestMove;
     }
 
 private:
@@ -258,14 +304,42 @@ private:
 
     std::pair<float, std::string> iterativeDeepening(int maxDepth) {
         std::string bestMove = "";
-        float bestScore = -INFINITY;
+        // std::cout << "Side to Move: " << board.sideToMove() << std::endl;
+        if (board.sideToMove() == Color("b")) {
+            float bestScore = 100000000;
+            for (int depth = 1; depth <= maxDepth; depth++) {
+                std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+                // std::cout << "Depth: " << depth << std::endl;
+                // std::cout << "Best Score: " << result.first << (bestScore <= 10000000000) << std::endl;
+                if (result.first < bestScore) {
+                    bestScore = result.first;
+                    bestMove = result.second;
+                }
+                if (bestScore <= -100000000 + 130000) {
+                    // std::cout << "Depth: " << depth << std::endl;
+                    break;
+                }
+            }
+            // std::cout << "Depth: " << depth << std::endl;
+            std::cout << "Best Score: " << bestScore << std::endl;
+            return {bestScore, bestMove};
+        }
+        float bestScore = -100000000;
         for (int depth = 1; depth <= maxDepth; depth++) {
-            std::pair<float, std::string> result = alphaBetaPruning(depth, -INFINITY, INFINITY);
+            std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+            // std::cout << "Depth: " << depth << std::endl;
+            // std::cout << "Best Score: " << result.first << std::endl;
             if (result.first > bestScore) {
                 bestScore = result.first;
                 bestMove = result.second;
             }
+            if (bestScore >= 100000000 - 130000) {
+                std::cout << "Depth: " << depth << std::endl;
+                break;
+            }
         }
+        // std::cout << "Depth: " << depth << std::endl;
+        std::cout << "Best Score: " << bestScore << std::endl;
         return {bestScore, bestMove};
     }
 
@@ -275,12 +349,13 @@ private:
         }
         if (board.getHalfMoveDrawType().first == GameResultReason::CHECKMATE) {
             if(board.sideToMove() == Color("w")) {
-                return {-INFINITY, ""}; 
+                return {-100000000 + (13-depth)*1000, ""};
+                //change to 1000000-depth should fix it
             } else {
-                return {INFINITY, ""};
+                return {100000000 - (13-depth)*1000 , ""};
             }
         }
-        if (board.isGameOver().first != GameResultReason::NONE) {
+        if (board.isGameOver().second == GameResult::DRAW) {
             return {0, ""};
         }
         auto moves = getLegalMoves();
@@ -311,12 +386,14 @@ private:
                     bestMove = uci::moveToUci(move);
                 }
             }
-            if (alpha >= beta) {
-                break;
-            }
             // if (depth == 5) {
             //     std::cout << uci::moveToUci(move) << " " << score << std::endl;
             // }
+            if (alpha >= beta) {
+                break;
+            }
+            // std::cout << depth << " " << uci::moveToUci(move) << " " << score << std::endl;
+            
         }
         // std::cout << bestMove << " " << alpha << std::endl;
         transpositionTable[board.hash()] = std::make_pair(board.sideToMove() == Color("w") ? alpha : beta, depth);
@@ -326,54 +403,65 @@ private:
 
 };
 
-int main() {
-    Engine engine = Engine("8/8/2Q5/4B2k/8/5P2/8/2K5 w - - 91 130");
-    // std::string pgn = "";
-    int move_count = 0;
-    // std::cout << "Hello" << std::endl;
-    move_count++;
-    std::cout << move_count << '. ';
-    while(engine.board.isGameOver().first == GameResultReason::NONE) {
-        // std::cout << "Best Move: " << engine.getBestMove(5) << std::endl;
-        if (move_count % 2 == 0) {
-            // std::cout << engine.board << '\n';
-            // std::cout << "Hello" << std::endl;
-            // engine.getBestMove(5);
-            // std::cout << "Hello" << std::endl;
-            Move move = uci::uciToMove(engine.board, engine.getBestMove(9));
-            // std::cout << "Hello" << std::endl;
-            // std::cout << move.from() << " " << move.to() << std::endl;
-            // if (move_count % 2 == 0) {
-            //     pgn += std::to_string(move_count/2 + 1) + ". ";
-            // }
-            // pgn += uci::moveToSan(engine.board, move);
-            // std::cout << "Black: " << move << std::endl;
-            // std::cout << engine.board << '\n';
-            // std::cout << engine.board << '\n';
-            std::cout << "White: " << uci::moveToUci(move) << std::endl;
+// int main() {
+//     Engine engine = Engine("r1b1k1nr/pppp1p2/2nbpq1p/6pP/P5P1/2PP1N2/R2QPP2/1NB1KBR1 b kq - 1 11");
+//     // std::string pgn = "";
+//     int move_count = 0;
+//     // std::cout << "Hello" << std::endl;
+//     // move_count++;
+//     // std::cout << move_count << ". ";
+//     while(engine.board.isGameOver().first == GameResultReason::NONE) {
+//         // std::cout << "Best Move: " << engine.getBestMove(5) << std::endl;
+//         if (move_count % 2 == 0) {
+//             // std::cout << engine.board << '\n';
+//             // std::cout << "Hello" << std::endl;
+//             // engine.getBestMove(5);
+//             // std::cout << "Hello" << std::endl;
+//             Move move = uci::uciToMove(engine.board, engine.getBestMove(13));
+//             // std::cout << "Hello" << std::endl;
+//             // std::cout << move.from() << " " << move.to() << std::endl;
+//             // if (move_count % 2 == 0) {
+//             //     pgn += std::to_string(move_count/2 + 1) + ". ";
+//             // }
+//             // pgn += uci::moveToSan(engine.board, move);
+//             // std::cout << "Black: " << move << std::endl;
+//             // std::cout << engine.board << '\n';
+//             // std::cout << engine.board << '\n';
+//             std::cout << "Black: " << uci::moveToUci(move) << std::endl;
 
-            engine.board.makeMove(move);
-        } else {
-            std::string move;
-            // std::cout << move << std::endl;
-            // std::cout << engine.board << '\n';
-            std::cout << "Black: ";
-            std::cin >> move;
-            Move move_ = uci::uciToMove(engine.board, move);
-            // std::cout << move_.from() << " " << move_.to() << std::endl;
-            // std::cout << engine.board.at(move_.from()) << " " << engine.board.at(move_.to()) << std::endl;
-            // std::cout << engine.board << '\n';
-            engine.board.makeMove(move_);
-            // std::cout << engine.board << '\n';
-        }
-        
-        // std::cout << engine.board << '\n';
-        // pgn += " ";
-        // std::cout << pgn << std::endl;
-    }
-    // std::cout << pgn << std::endl;
+//             engine.board.makeMove(move);
+//         } else {
+//             std::string move;
+//             // std::cout << move << std::endl;
+//             // std::cout << engine.board << '\n';
+//             std::cout << "White: ";
+//             std::cin >> move;
+//             auto moves = engine.getLegalMoves();
+//             while (std::find(moves.begin(), moves.end(), uci::uciToMove(engine.board, move)) == moves.end()) {
+//                 std::cout << "Invalid Move. Try again: ";
+//                 std::cin >> move;
+//             }
+//             Move move_ = uci::uciToMove(engine.board, move);
+//             // std::cout << move_.from() << " " << move_.to() << std::endl;
+//             // std::cout << engine.board.at(move_.from()) << " " << engine.board.at(move_.to()) << std::endl;
+//             // std::cout << engine.board << '\n';
+//             engine.board.makeMove(move_);
+//             // std::cout << engine.board << '\n';
+//         }
+//         move_count++;
+//         // std::cout << engine.board << '\n';
+//         // pgn += " ";
+//         // std::cout << pgn << std::endl;
+//     }
+//     // std::cout << pgn << std::endl;
     
-    std::cout << "Best Move: " << engine.getBestMove(5) << std::endl;
-    std::cout << engine.board.hash() << std::endl;
-    return 0;
+//     std::cout << "Best Move: " << engine.getBestMove(5) << std::endl;
+//     std::cout << engine.board.hash() << std::endl;
+//     return 0;
+// }
+
+
+int main() {
+    Engine engine = Engine();
+    std::cout << engine.getBestMove(6) << std::endl;
 }

@@ -210,7 +210,7 @@ class Engine:
         return hash
     
     def eval(self) -> float:
-        fen = self.board.fen().split()[0]
+        fen = self.hash >> 8
         if fen in storage:
             return storage[fen]
         white_pawns, black_pawns = 0, 0
