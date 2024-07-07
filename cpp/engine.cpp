@@ -7,6 +7,7 @@
 #include <chrono>
 #include <unordered_map>
 #include <thread>
+#include <atomic>
 
 using namespace chess;
 // using json = nlohmann::json;
@@ -172,64 +173,125 @@ public:
         return score;
     }
 
-    std::string getAlphaMove(int depth) {
-        return alphaBetaPruning(depth, -100000000, 100000000).second;
-    }
+    // std::string getAlphaMove(int depth) {
+    //     return alphaBetaPruning(depth, -100000000, 100000000).second;
+    // }
 
-    std::string getBestMove(int maxDepth = 5) {
+    // std::string getBestMove(int maxDepth = 5) {
         // alphaBetaPruning(maxDepth, -INFINITY, INFINITY);
         // std::cout << "Hello" << std::endl;
         // return alphaBetaPruning(maxDepth, -INFINITY, INFINITY).second;
+    //     auto start = std::chrono::high_resolution_clock::now();
+    //     if (board.sideToMove() == Color("b")) {
+    //         float bestScore = 100000000;
+    //         std::string bestMove = "";
+    //         for (int depth = 1; depth <= maxDepth; depth++) {
+    //             // std::cout << "Depth: " << depth << std::endl;
+    //             std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+    //             auto end = std::chrono::high_resolution_clock::now();
+    //             double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    //             // std::cout << duration << std::endl;
+    //             if (duration < 1500 && depth == maxDepth) {
+    //                 maxDepth++;
+    //             }
+    //             // std::cout << "Depth: " << depth << std::endl;
+    //             // std::cout << "Best Score: " << result.first << (bestScore <= 10000000000) << std::endl;
+    //             if (result.first <= bestScore) {
+    //                 bestScore = result.first;
+    //                 bestMove = result.second;
+    //             }
+    //             if (bestScore <= -100000000 + 130000) {
+    //                 // std::cout << "Depth: " << depth << std::endl;
+    //                 break;
+    //             }
+    //         }
+    //         // std::cout << "Depth: " << maxDepth << std::endl;
+    //         return bestMove;
+    //     }
+    //     float bestScore = -100000000;   
+    //     std::string bestMove = "";
+    //     for (int depth = 1; depth <= maxDepth; depth++) {
+    //         // std::cout << "Depth: " << depth << std::endl;
+    //         std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+    //         auto end = std::chrono::high_resolution_clock::now();
+    //         double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    //         // std::cout << duration << std::endl;
+    //         if (duration < 1500 && depth == maxDepth) {
+    //             maxDepth++;
+    //         }
+    //         // std::cout << "Depth: " << depth << std::endl;
+    //         // std::cout << "Best Score: " << result.first << std::endl;
+    //         if (result.first >= bestScore) {
+    //             bestScore = result.first;
+    //             bestMove = result.second;
+    //         }
+    //         if (bestScore >= 100000000 - 130000) {
+    //             // std::cout << "Depth: " << depth << std::endl;
+    //             break;
+    //         }
+    //     }
+    //     // std::cout << "Depth: " << maxDepth << std::endl;
+    //     return bestMove;
+    // }
+
+    std::string getBetaMove() {
         auto start = std::chrono::high_resolution_clock::now();
-        if (board.sideToMove() == Color("b")) {
-            float bestScore = 100000000;
+        int depth = 1;
+        if (board.sideToMove() == Color("w")) {
+            float bestScore = -100000000;
             std::string bestMove = "";
-            for (int depth = 1; depth <= maxDepth; depth++) {
+            double duration = 0;
+            while (duration <= 10000) {
                 // std::cout << "Depth: " << depth << std::endl;
-                std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+                bool flag = false;
+                std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000, start, flag);
+                if (flag) {
+                    break;
+                }
                 auto end = std::chrono::high_resolution_clock::now();
                 double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                // std::cout << result.first << " " << bestScore << std::endl;
                 // std::cout << duration << std::endl;
-                if (duration < 1500 && depth == maxDepth) {
-                    maxDepth++;
-                }
-                // std::cout << "Depth: " << depth << std::endl;
-                // std::cout << "Best Score: " << result.first << (bestScore <= 10000000000) << std::endl;
-                if (result.first <= bestScore) {
-                    bestScore = result.first;
-                    bestMove = result.second;
-                }
-                if (bestScore <= -100000000 + 130000) {
+
+                bestScore = result.first;
+                bestMove = result.second;
+                if (bestScore >= 100000000 - 130000) {
                     // std::cout << "Depth: " << depth << std::endl;
                     break;
                 }
+                if (duration > 10000) {
+                    break;
+                }
+                depth++;
             }
-            // std::cout << "Depth: " << maxDepth << std::endl;
+            // std::cout << "Depth: " << depth << std::endl;
             return bestMove;
         }
-        float bestScore = -100000000;   
+        float bestScore = 100000000;
         std::string bestMove = "";
-        for (int depth = 1; depth <= maxDepth; depth++) {
+        double duration = 0;
+        while (duration <= 10000) {
             // std::cout << "Depth: " << depth << std::endl;
-            std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+            bool flag = false;
+            std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000, start, flag);
+            if (flag) {
+                break;
+            }
             auto end = std::chrono::high_resolution_clock::now();
             double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-            // std::cout << duration << std::endl;
-            if (duration < 1500 && depth == maxDepth) {
-                maxDepth++;
-            }
-            // std::cout << "Depth: " << depth << std::endl;
-            // std::cout << "Best Score: " << result.first << std::endl;
-            if (result.first >= bestScore) {
-                bestScore = result.first;
-                bestMove = result.second;
-            }
-            if (bestScore >= 100000000 - 130000) {
+            // std::cout << result.first << " " << result.second << std::endl;
+            bestScore = result.first;
+            bestMove = result.second;
+            if (bestScore <= -100000000 + 130000) {
                 // std::cout << "Depth: " << depth << std::endl;
                 break;
             }
+            if (duration > 10000) {
+                break;
+            }
+            depth++;
         }
-        // std::cout << "Depth: " << maxDepth << std::endl;
+        // std::cout << "Depth: " << depth << std::endl;
         return bestMove;
     }
 
@@ -312,86 +374,100 @@ private:
         -20.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -20.0, 
     };
 
-    std::pair<float, std::string> iterativeDeepening(int maxDepth) {
-        std::string bestMove = "";
-        auto start = std::chrono::high_resolution_clock::now();
-        if (board.sideToMove() == Color("w")) {
-            float bestScore = -100000000;
-            for (int depth = 1; depth <= maxDepth; depth++) {
-                std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
-                auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-                if (duration <= 2000) {
-                    maxDepth++;
-                }
-                if (result.first < bestScore) {
-                    bestScore = result.first;
-                    bestMove = result.second;
-                }
-            }
-            // std::cout << "Best Score: " << bestScore << std::endl;
-            return {bestScore, bestMove};
-        }
-        if (board.sideToMove() == Color("b")) {
-            float bestScore = 100000000;
-            for (int depth = 1; depth <= maxDepth; depth++) {
-                std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
-                // std::cout << "Depth: " << depth << std::endl;
-                // std::cout << "Best Score: " << result.first << (bestScore <= 10000000000) << std::endl;
-                auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-                if (duration <= 2000) {
-                    maxDepth++;
-                }
-                if (result.first < bestScore) {
-                    bestScore = result.first;
-                    bestMove = result.second;
-                }
-                if (bestScore <= -100000000 + 130000) {
-                    // std::cout << "Depth: " << depth << std::endl;
-                    break;
-                }
-            }
-            // std::cout << "Depth: " << depth << std::endl;
-            // std::cout << "Best Score: " << bestScore << std::endl;
-            return {bestScore, bestMove};
-        }
-        float bestScore = -100000000;
-        for (int depth = 1; depth <= maxDepth; depth++) {
-            std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
-            // std::cout << "Depth: " << depth << std::endl;
-            // std::cout << "Best Score: " << result.first << std::endl;
-            if (result.first > bestScore) {
-                bestScore = result.first;
-                bestMove = result.second;
-            }
-            if (bestScore >= 100000000 - 130000) {
-                std::cout << "Depth: " << depth << std::endl;
-                break;
-            }
-        }
-        // std::cout << "Depth: " << depth << std::endl;
-        // std::cout << "Best Score: " << bestScore << std::endl;
-        return {bestScore, bestMove};
-    }
+    // std::pair<float, std::string> iterativeDeepening(int maxDepth) {
+    //     std::string bestMove = "";
+    //     auto start = std::chrono::high_resolution_clock::now();
+    //     if (board.sideToMove() == Color("w")) {
+    //         float bestScore = -100000000;
+    //         for (int depth = 1; depth <= maxDepth; depth++) {
+    //             std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+    //             auto end = std::chrono::high_resolution_clock::now();
+    //             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    //             if (duration <= 2000) {
+    //                 maxDepth++;
+    //             }
+    //             if (result.first < bestScore) {
+    //                 bestScore = result.first;
+    //                 bestMove = result.second;
+    //             }
+    //         }
+    //         // std::cout << "Best Score: " << bestScore << std::endl;
+    //         return {bestScore, bestMove};
+    //     }
+    //     if (board.sideToMove() == Color("b")) {
+    //         float bestScore = 100000000;
+    //         for (int depth = 1; depth <= maxDepth; depth++) {
+    //             std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+    //             // std::cout << "Depth: " << depth << std::endl;
+    //             // std::cout << "Best Score: " << result.first << (bestScore <= 10000000000) << std::endl;
+    //             auto end = std::chrono::high_resolution_clock::now();
+    //             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    //             if (duration <= 2000) {
+    //                 maxDepth++;
+    //             }
+    //             if (result.first < bestScore) {
+    //                 bestScore = result.first;
+    //                 bestMove = result.second;
+    //             }
+    //             if (bestScore <= -100000000 + 130000) {
+    //                 // std::cout << "Depth: " << depth << std::endl;
+    //                 break;
+    //             }
+    //         }
+    //         // std::cout << "Depth: " << depth << std::endl;
+    //         // std::cout << "Best Score: " << bestScore << std::endl;
+    //         return {bestScore, bestMove};
+    //     }
+    //     float bestScore = -100000000;
+    //     for (int depth = 1; depth <= maxDepth; depth++) {
+    //         std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
+    //         // std::cout << "Depth: " << depth << std::endl;
+    //         // std::cout << "Best Score: " << result.first << std::endl;
+    //         if (result.first > bestScore) {
+    //             bestScore = result.first;
+    //             bestMove = result.second;
+    //         }
+    //         if (bestScore >= 100000000 - 130000) {
+    //             std::cout << "Depth: " << depth << std::endl;
+    //             break;
+    //         }
+    //     }
+    //     // std::cout << "Depth: " << depth << std::endl;
+    //     // std::cout << "Best Score: " << bestScore << std::endl;
+    //     return {bestScore, bestMove};
+    // }
 
-    std::pair<float, std::string> alphaBetaPruning(int depth, float alpha, float beta) {
-        if (depth == 0) {
-            return {evaluate(), ""};
+    std::pair<float, std::string> alphaBetaPruning(int depth, float alpha, float beta, std::chrono::time_point<std::chrono::high_resolution_clock> start, bool& flag) {
+        double duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
+        if (duration >= 10000) {
+            // std::cout << "Hey" << std::endl;
+            flag = true;
+            if (board.sideToMove() == Color("w")) {
+                return {100000001, ""};
+            } else {
+                return {100000001, ""};
+            }
         }
         if (board.getHalfMoveDrawType().first == GameResultReason::CHECKMATE) {
             if(board.sideToMove() == Color("w")) {
-                return {-100000000 + (13-depth)*1000, ""};
+                transpositionTable[board.hash()] = std::make_pair(-100000000 + (100-depth)*100, depth);
+                return {-100000000 + (100-depth)*100, ""};
                 //change to 1000000-depth should fix it
             } else {
-                return {100000000 - (13-depth)*1000 , ""};
+                transpositionTable[board.hash()] = std::make_pair(100000000 - (100-depth)*100, depth);
+                return {100000000 - (100-depth)*100, ""};
             }
         }
+        if (depth == 0) {
+            return {evaluate(), ""};
+        }
         if (board.isGameOver().second == GameResult::DRAW) {
+            transpositionTable[board.hash()] = std::make_pair(0, depth);
             return {0, ""};
         }
         auto moves = getLegalMoves();
         std::string bestMove = uci::moveToUci(moves[0]);
+        int movesCount = 0;
         for (const auto& move : moves) {
             board.makeMove(move);
             float score;
@@ -400,11 +476,20 @@ private:
                 if (transposition.second >= depth) {
                     score = transposition.first;
                 } else {
-                    score = alphaBetaPruning(depth - 1, alpha, beta).first;
+                    score = alphaBetaPruning(depth - 1, alpha, beta, start, flag).first;
+                    if (abs(score) >= 100000000) {
+                        board.unmakeMove(move);
+                        break;
+                    }
                 }
             } else {
-                score = alphaBetaPruning(depth - 1, alpha, beta).first;
+                score = alphaBetaPruning(depth - 1, alpha, beta, start, flag).first;
+                if (abs(score) >= 100000000) {
+                    board.unmakeMove(move);
+                    break;
+                }
             }
+            movesCount++;
             // float score = alphaBetaPruning(depth - 1, alpha, beta).first;
             board.unmakeMove(move);
             if (board.sideToMove() == Color("w")) {
@@ -429,75 +514,80 @@ private:
         }
         // std::cout << bestMove << " " << alpha << std::endl;
         transpositionTable[board.hash()] = std::make_pair(board.sideToMove() == Color("w") ? alpha : beta, depth);
-
+        if (movesCount == 0) {
+            if (board.sideToMove() == Color("w")) {
+                return {100000000 - (13-depth)*1000, ""};
+            } else {
+                return {-100000000 + (13-depth)*1000, ""};
+            }
+        }
         return {board.sideToMove() == Color("w") ? alpha : beta, bestMove};
     }
-
 };
 
-// int main() {
-//     Engine engine = Engine();
-//     // std::string pgn = "";
-//     int move_count = 0;
-//     // std::cout << "Hello" << std::endl;
-//     // move_count++;
-//     // std::cout << move_count << ". ";
-//     while(engine.board.isGameOver().first == GameResultReason::NONE) {
-//         // std::cout << "Best Move: " << engine.getBestMove(5) << std::endl;
-//         if (move_count % 2 == 0) {
-//             // std::cout << engine.board << '\n';
-//             // std::cout << "Hello" << std::endl;
-//             // engine.getBestMove(5);
-//             // std::cout << "Hello" << std::endl;
-//             Move move = uci::uciToMove(engine.board, engine.getBestMove(13));
-//             auto moves = engine.getLegalMoves();
-//             while (std::find(moves.begin(), moves.end(), move) == moves.end()) {
-//                 move = uci::uciToMove(engine.board, engine.getBestMove(13));
-//             }
-//             // std::cout << "Hello" << std::endl;
-//             // std::cout << move.from() << " " << move.to() << std::endl;
-//             // if (move_count % 2 == 0) {
-//             //     pgn += std::to_string(move_count/2 + 1) + ". ";
-//             // }
-//             // pgn += uci::moveToSan(engine.board, move);
-//             // std::cout << "Black: " << move << std::endl;
-//             // std::cout << engine.board << '\n';
-//             // std::cout << engine.board << '\n';
-//             std::cout << "Black: " << uci::moveToUci(move) << std::endl;
+int main() {
+    Engine engine = Engine();
+    // std::string pgn = "";
+    int move_count = 0;
+    // std::cout << "Hello" << std::endl;
+    move_count++;
+    // std::cout << move_count << ". ";
+    while(engine.board.isGameOver().first == GameResultReason::NONE) {
+        // std::cout << "Best Move: " << engine.getBestMove(5) << std::endl;
+        if (move_count % 2 == 0) {
+            // std::cout << engine.board << '\n';
+            // std::cout << "Hello" << std::endl;
+            // engine.getBestMove(5);
+            // std::cout << "Hello" << std::endl;
+            Move move = uci::uciToMove(engine.board, engine.getBetaMove());
+            auto moves = engine.getLegalMoves();
+            while (std::find(moves.begin(), moves.end(), move) == moves.end()) {
+                move = uci::uciToMove(engine.board, engine.getBetaMove());
+            }
+            // std::cout << "Hello" << std::endl;
+            // std::cout << move.from() << " " << move.to() << std::endl;
+            // if (move_count % 2 == 0) {
+            //     pgn += std::to_string(move_count/2 + 1) + ". ";
+            // }
+            // pgn += uci::moveToSan(engine.board, move);
+            // std::cout << "Black: " << move << std::endl;
+            // std::cout << engine.board << '\n';
+            // std::cout << engine.board << '\n';
+            std::cout << "Black: " << uci::moveToUci(move) << std::endl;
 
-//             engine.board.makeMove(move);
-//         } else {
-//             std::string move;
-//             // std::cout << move << std::endl;
-//             // std::cout << engine.board << '\n';
-//             std::cout << "White: ";
-//             std::cin >> move;
-//             auto moves = engine.getLegalMoves();
-//             while (std::find(moves.begin(), moves.end(), uci::uciToMove(engine.board, move)) == moves.end()) {
-//                 std::cout << "Invalid Move. Try again: ";
-//                 std::cin >> move;
-//             }
-//             Move move_ = uci::uciToMove(engine.board, move);
-//             // std::cout << move_.from() << " " << move_.to() << std::endl;
-//             // std::cout << engine.board.at(move_.from()) << " " << engine.board.at(move_.to()) << std::endl;
-//             // std::cout << engine.board << '\n';
-//             engine.board.makeMove(move_);
-//             // std::cout << engine.board << '\n';
-//         }
-//         move_count++;
-//         // std::cout << engine.board << '\n';
-//         // pgn += " ";
-//         // std::cout << pgn << std::endl;
-//     }
-//     // std::cout << pgn << std::endl;
+            engine.board.makeMove(move);
+        } else {
+            std::string move;
+            // std::cout << move << std::endl;
+            // std::cout << engine.board << '\n';
+            std::cout << "White: ";
+            std::cin >> move;
+            auto moves = engine.getLegalMoves();
+            while (std::find(moves.begin(), moves.end(), uci::uciToMove(engine.board, move)) == moves.end()) {
+                std::cout << "Invalid Move. Try again: ";
+                std::cin >> move;
+            }
+            Move move_ = uci::uciToMove(engine.board, move);
+            // std::cout << move_.from() << " " << move_.to() << std::endl;
+            // std::cout << engine.board.at(move_.from()) << " " << engine.board.at(move_.to()) << std::endl;
+            // std::cout << engine.board << '\n';
+            engine.board.makeMove(move_);
+            // std::cout << engine.board << '\n';
+        }
+        move_count++;
+        // std::cout << engine.board << '\n';
+        // pgn += " ";
+        // std::cout << pgn << std::endl;
+    }
+    // std::cout << pgn << std::endl;
     
-//     std::cout << "Best Move: " << engine.getBestMove(5) << std::endl;
-//     std::cout << engine.board.hash() << std::endl;
-//     return 0;
-// }
+    // std::cout << "Best Move: " << engine.getBestMove(5) << std::endl;
+    // std::cout << engine.board.hash() << std::endl;
+    return 0;
+}
 
 // int main() {
 //     Engine engine = Engine();
-//     std::cout << "Hello" << std::endl;
-//     std::cout << engine.getBestMove(5) << std::endl;
+
+//     std::cout << engine.getBetaMove() << std::endl;
 // }
