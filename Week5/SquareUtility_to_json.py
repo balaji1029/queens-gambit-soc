@@ -152,7 +152,62 @@ data = {
     "Bishops": Bishops
 }
 
-
+print('Pawns')
+print('{', end='')
+for i in range(8):
+	for j in range(8):
+		print(pawns_util[i*8+j], end=', ')
+	print()
+print('}')
+print('PawnsEnd')
+print('{', end='')
+for i in range(8):
+	for j in range(8):
+		print(pawns_end_util[i*8+j], end=', ')
+	print()
+print('}')
+print('Rooks')
+print('{', end='')
+for i in range(8):
+	for j in range(8):
+		print(rooks_util[i*8+j], end=', ')
+	print()
+print('}')
+print('Queens')
+print('{', end='')
+for i in range(8):
+	for j in range(8):
+		print(queens_util[i*8+j], end=', ')
+	print()
+print('}')
+print('KingStart')
+print('{', end='')
+for i in range(8):
+	for j in range(8):
+		print(king_start_util[i*8+j], end=', ')
+	print()
+print('}')
+print('KingEnd')
+print('{', end='')
+for i in range(8):
+	for j in range(8):
+		print(king_end_util[i*8+j], end=', ')
+	print()
+print('}')
+print('Knights')
+print('{', end='')
+for i in range(8):
+	for j in range(8):
+		print(knights_util[i*8+j], end=', ')
+	print()
+print('}')
+print('Bishops')
+print('{', end='')
+for i in range(8):
+	for j in range(8):
+		print(bishops_util[i*8+j], end=', ')
+	print()
+print('}')
 # with open('SquareUtility.json', 'w') as file:
 #     json.dump(data, file)
 

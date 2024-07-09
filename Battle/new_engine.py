@@ -324,6 +324,8 @@ class Engine:
                     best_move = move
                 if alpha >= beta:
                     break
+            if depth == 5:
+                print(f"Move: {move}, Score: {score}, Alpha: {alpha}, Beta: {beta}")
         self.transposition_table[self.hash] = (depth, alpha if self.board.turn else beta, str(best_move))
         return alpha if self.board.turn else beta, best_move
 
@@ -341,39 +343,40 @@ class Engine:
 
 # Initialize the engine and get the best move
 engine = Engine()
+print(engine.get_best_move(5))
 # start = time.time()
-Movenumber=1
-pgnstr=""
-# display(engine.board)
-whitetime=[]
-blacktime=[]
-while not engine.board.is_game_over():
-    start=time.time()
-    move=engine.get_best_move(5)
-    t1=time.time()-start
-    whitetime.append(t1)
-    sanmove=engine.board.san(move)
-    pgnstr+=str(Movenumber)+". "+str(sanmove)+" "
-    engine.make_move(move)
-    print(engine.board)
-#     print(pgnstr)
-    print("Time taken for last move:",t1)
-    if engine.board.is_game_over():
-        break
-    start=time.time()
-    move=engine.get_best_move(5)
-    t2=time.time()-start
-    blacktime.append(t2)
-    sanmove=engine.board.san(move)
-    pgnstr+=str(Movenumber)+". "+str(sanmove)+" "
-    engine.make_move(move)
-    print(engine.board)
-#     print(pgnstr)
-    print("Time taken for last move:",t2)
-    Movenumber+=1
-print(pgnstr)
-print("White time:",sum(whitetime))
-print("Black time:",sum(blacktime))
-json.dump(engine.storage, open('storage.json', 'w'))
-json.dump(engine.transposition_table, open('transposition_table.json', 'w'))
+# Movenumber=1
+# pgnstr=""
+# # display(engine.board)
+# whitetime=[]
+# blacktime=[]
+# while not engine.board.is_game_over():
+#     start=time.time()
+#     move=engine.get_best_move(5)
+#     t1=time.time()-start
+#     whitetime.append(t1)
+#     sanmove=engine.board.san(move)
+#     pgnstr+=str(Movenumber)+". "+str(sanmove)+" "
+#     engine.make_move(move)
+#     print(engine.board)
+# #     print(pgnstr)
+#     print("Time taken for last move:",t1)
+#     if engine.board.is_game_over():
+#         break
+#     start=time.time()
+#     move=engine.get_best_move(5)
+#     t2=time.time()-start
+#     blacktime.append(t2)
+#     sanmove=engine.board.san(move)
+#     pgnstr+=str(Movenumber)+". "+str(sanmove)+" "
+#     engine.make_move(move)
+#     print(engine.board)
+# #     print(pgnstr)
+#     print("Time taken for last move:",t2)
+#     Movenumber+=1
+# print(pgnstr)
+# print("White time:",sum(whitetime))
+# print("Black time:",sum(blacktime))
+# json.dump(engine.storage, open('storage.json', 'w'))
+# json.dump(engine.transposition_table, open('transposition_table.json', 'w'))
 # print(f"Time taken: {time.time() - start}")
