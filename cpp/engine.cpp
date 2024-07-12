@@ -594,7 +594,7 @@ private:
     //     -20.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -20.0, 
     // };
 
-    std::pair<float, std::string> alphaBetaPruning_flag(int depth, float alpha, float beta, std::chrono::time_point<std::chrono::high_resolution_clock> start, bool& flag, bool root) {
+    std::pair<float, std::string> alphaBetaPruning_flag(int depth, float alpha, float beta, std::chrono::time_point<std::chrono::high_resolution_clock> start, bool& flag, bool root, int depthReached = 0) {
         if (!root) {
             if (transpositionTable.find(board.hash()) != transpositionTable.end()) {
                 auto transposition = transpositionTable[board.hash()];
@@ -623,11 +623,11 @@ private:
         if (board.getHalfMoveDrawType().first == GameResultReason::CHECKMATE) {
             if(board.sideToMove() == Color("w")) {
                 transpositionTable[board.hash()] = std::make_pair(-100000000 + (100-depth)*100, depth);
-                return {-100000000 + (100-depth)*100, ""};
+                return {-100000000 - depthReached*100, ""};
                 //change to 1000000-depth should fix it
             } else {
                 transpositionTable[board.hash()] = std::make_pair(100000000 - (100-depth)*100, depth);
-                return {100000000 - (100-depth)*100, ""};
+                return {100000000 + depthReached*100, ""};
             }
         }
         if (depth == 0) {
@@ -635,12 +635,17 @@ private:
         }
         if (board.isGameOver().second == GameResult::DRAW) {
             // transpositionTable[board.hash()] = std::make_pair(0, depth);
-            if (board.sideToMove() == Color("w")) {
-                transpositionTable[board.hash()] = std::make_pair(-1e8 + (100)*100, depth);
-                return {-1e8 + (100)*100, ""};
-            } else {
-                transpositionTable[board.hash()] = std::make_pair(1e8 - (100)*100, depth);
-                return {1e8 - (100)*100, ""};
+            float eval = evaluate();
+            // if (board.sideToMove() == Color("w")) {
+            //     if evaluate()
+            //     transpositionTable[board.hash()] = std::make_pair(-1e8 + (100)*100, depth);
+            //     return {-1e8 + (100)*100, ""};
+            // } else {
+            //     transpositionTable[board.hash()] = std::make_pair(1e8 - (100)*100, depth);
+            //     return {1e8 - (100)*100, ""};
+            // }
+            if (eval >= 0) {
+                
             }
         }
         // auto moves = getLegalMoves();
@@ -655,14 +660,14 @@ private:
                 if (transposition.second >= depth) {
                     score = transposition.first;
                 } else {
-                    score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, false).first;
+                    score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, false, depthReached+1).first;
                     if (abs(score) >= 100000000) {
                         board.unmakeMove(move);
                         break;
                     }
                 }
             } else {
-                score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, false).first;
+                score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, false, depthReached+1).first;
                 if (abs(score) >= 100000000) {
                     board.unmakeMove(move);
                     break;
@@ -767,6 +772,43 @@ private:
         transpositionTable[board.hash()] = std::make_pair(board.sideToMove() == Color("w") ? alpha : beta, depth);
         return {board.sideToMove() == Color("w") ? alpha : beta, bestMove};
     }
+
+    std::pair<float, std::string> alphaBetaPruning_threads(int depth, float alpha, float beta, int beginning) {
+        if (transpositionTable.find(board.hash()) != transpositionTable.end()) {
+            if (transpositionTable[board.hash()].second >= depth) {
+                return {transpositionTable[board.hash()].first, ""};
+            }
+        }
+        
+        if (board.getHalfMoveDrawType().first == GameResultReason::CHECKMATE) {
+            if(board.sideToMove() == Color("w")) {
+                transpositionTable[board.hash()] = std::make_pair(-100000000 + (100-depth)*100, depth);
+                return {-100000000 + (100-depth)*100, ""};
+            } else {
+                transpositionTable[board.hash()] = std::make_pair(100000000 - (100-depth)*100, depth);
+                return {100000000 - (100-depth)*100, ""};
+            }
+        }
+        if (board.isGameOver().second == GameResult::DRAW) {
+            // transpositionTable[board.hash()] = std::make_pair(0, depth);
+            if (board.sideToMove() == Color("w")) {
+                transpositionTable[board.hash()] = std::make_pair(-1e8 + (100)*100, depth);
+                return {-1e8 + (100)*100, ""};
+            } else {
+                transpositionTable[board.hash()] = std::make_pair(1e8 - (100)*100, depth);
+                return {1e8 - (100)*100, ""};
+            }
+        }
+
+        if (depth == 0) {
+            return {evaluate(), ""};
+        }
+
+        auto moves = getLegalMoves();
+        std::string bestMove = uci::moveToUci(moves[0]);
+        float = 
+    }
+
 };
 
 int main() {

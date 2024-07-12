@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <string>
 #include "chess-library-master/include/chess.hpp"
 #include <cmath>
 #include <memory>
@@ -10,9 +11,24 @@
 #include <atomic>
 #include <fstream>
 #include <sstream>
+#include <ext/pb_ds/assoc_container.hpp> 
+#include <ext/pb_ds/tree_policy.hpp> 
+
+#define MAX_TIME 10000
+#define MAX_EVAL 100000000
+
+using namespace __gnu_pbds;
+
+template<class T>
+struct custom_compare {
+    bool operator()(const T& a, const T& b) const {
+        return a.second <= b.second;
+    }
+};
+  
+template<class T> using ordered_set = tree<T, null_type, custom_compare<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 using namespace chess;
-// using json = nlohmann::json;
 
 class Engine {
 public:
@@ -37,33 +53,32 @@ public:
         return legalMoves;
     }
 
-    std::vector<Move> getOrderedMoves() {
+    ordered_set<std::pair<Move, float>> getOrderedMoves() {
         auto moves = getLegalMoves();
-        std::vector<std::pair<float, Move>> orderedMoves;
+        ordered_set<std::pair<Move, float>> orderedMoves;
         for (const auto& move : moves) {
             board.makeMove(move);
             if (board.getHalfMoveDrawType().first == GameResultReason::CHECKMATE) {
                 board.unmakeMove(move);
-                return {move};
+                ordered_set<std::pair<Move, float>> movie;
+                movie.insert({move, MAX_EVAL});
+                return movie;
             } else if (board.inCheck()) {
-                orderedMoves.push_back({50, move});
+                if (board.sideToMove() == Color("w")) {
+                    orderedMoves.insert({move, MAX_EVAL});
+                } else {
+                    orderedMoves.insert({move, -MAX_EVAL});
+                }
             } else {
-                orderedMoves.push_back({evaluate(), move});
+                if (board.sideToMove() == Color("w")) {
+                    orderedMoves.insert({move, evaluate()});
+                } else {
+                    orderedMoves.insert({move, -evaluate()});
+                }
             }
-            float score = evaluate();
             board.unmakeMove(move);
         }
-        std::sort(orderedMoves.begin(), orderedMoves.end(), [](const auto& a, const auto& b) {
-            return a.first > b.first;
-        });
-        std::vector<Move> ordered;
-        for (const auto& move : orderedMoves) {
-            ordered.push_back(move.second);
-        }
-        // for (const auto& move : ordered) {
-        //     std::cout << move << std::endl;
-        // }
-        return ordered;
+        return orderedMoves;
     }
 
     std::shared_ptr<Engine> getChild(const Move& move) {
@@ -83,144 +98,6 @@ public:
     }
 
     float evaluate() {
-        // if (storage.find(hash) != storage.end()) {
-        //     return storage[hash];
-        // }
-        // Evaluation logic here
-        // float score = 0;
-        // int white_pawns = 0, black_pawns = 0;
-        // int white_pieces = 0, black_pieces = 0;
-        // int white_bishops = 0, black_bishops = 0;
-        // float white_eval = 0, black_eval = 0;
-        // int white_king = 0, black_king = 0;
-        // for (int i=0; i<64; i++) {
-        //     int piece = board.at(Square(i));
-        //     if (piece != 12) {
-        //         if (piece < 6) {
-        //             white_pieces++;
-        //             switch (piece)
-        //             {
-        //             case 0:
-        //                 white_eval += 1 + (float) pawns_util[i]/100;
-        //                 white_pawns++;
-        //                 break;
-        //             case 1:
-        //                 white_eval += 3 + (float) knights_util[i]/100;
-        //                 break;
-        //             case 2:
-        //                 // white_eval += bishops_util[i];
-        //                 white_eval += 3.25 + (float) bishops_util[i]/100;
-        //                 white_bishops++;
-        //                 break;
-        //             case 3:
-        //                 // white_eval += rooks_util[i];
-        //                 white_eval += 5 + (float) rooks_util[i]/100;
-        //                 break;
-        //             case 4:
-        //                 // white_eval += queens_util[i];
-        //                 white_eval += 9 + (float) queens_util[i]/100;
-        //                 break;
-        //             case 5:
-        //                 white_king = i;
-        //                 break;
-        //             default:
-        //                 break;
-        //             }
-        //         } else {
-        //             black_pieces++;
-        //             switch (piece)
-        //             {
-        //             case 6:
-        //                 black_eval += 1 + (float) pawns_util[63-i]/100;
-        //                 black_pawns++;
-        //                 break;
-        //             case 7:
-        //                 black_eval += 3 + (float) knights_util[63-i]/100;
-        //                 break;
-        //             case 8:
-        //                 // black_eval += bishops_util[63-i];
-        //                 black_eval += 3.25 + (float) bishops_util[63-i]/100;
-        //                 black_bishops++;
-        //                 break;
-        //             case 9:
-        //                 // black_eval += rooks_util[63-i];
-        //                 black_eval += 5 + (float) rooks_util[63-i]/100;
-        //                 break;
-        //             case 10:
-        //                 // black_eval += queens_util[63-i];
-        //                 black_eval += 9 + (float) queens_util[63-i]/100;
-        //                 break;
-        //             case 11:
-        //                 black_king = 63-i;
-        //                 break;
-        //             default:
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
-        // if (white_pieces + black_pieces > 8) {
-        //     white_eval += (float) kings_start_util[white_king]/100;
-        //     black_eval += (float) kings_start_util[black_king]/100;
-        // } else {
-        //     white_eval += (float) kings_end_util[white_king]/100;
-        //     black_eval += (float) kings_end_util[black_king]/100;
-        // }
-        // if (white_bishops >= 2) {
-        //     white_eval += 0.5;
-        // }
-        // if (black_bishops >= 2) {
-        //     black_eval += 0.5;
-        // }
-        // score = white_eval - black_eval;
-        // // std::cout << score << std::endl;
-        // return score;
-
-        // float score = 0;
-        // int white_pawns = 0, black_pawns = 0;
-        // int white_pieces = 0, black_pieces = 0;
-        // int white_bishops = 0, black_bishops = 0;
-        // float white_eval = 0, black_eval = 0;
-        // int white_king = 0, black_king = 0;
-
-        // // Precompute piece values
-        // const float piece_values[6] = {1.0, 3.0, 3.25, 5.0, 9.0, 0.0}; // King value is 0 because it doesn't contribute directly
-
-        // for (int i = 0; i < 64; ++i) {
-        //     int piece = board.at(Square(i));
-        //     if (piece != 12) {
-        //         int mirrored_i = 63 - i;
-        //         if (piece < 6) { // White pieces
-        //             white_pieces++;
-        //             white_eval += piece_values[piece] + (float) piece_util[piece][i] / 100.0;
-        //             if (piece == 0) white_pawns++;
-        //             if (piece == 2) white_bishops++;
-        //             if (piece == 5) white_king = i;
-        //         } else { // Black pieces
-        //             black_pieces++;
-        //             int black_piece = piece - 6;
-        //             black_eval += piece_values[black_piece] + (float) piece_util[black_piece][mirrored_i] / 100.0;
-        //             if (black_piece == 0) black_pawns++;
-        //             if (black_piece == 2) black_bishops++;
-        //             if (black_piece == 5) black_king = mirrored_i;
-        //         }
-        //     }
-        // }
-
-        // if (white_pieces + black_pieces > 8) {
-        //     white_eval += (float)kings_start_util[white_king] / 100;
-        //     black_eval += (float)kings_start_util[black_king] / 100;
-        // } else {
-        //     white_eval += (float)kings_end_util[white_king] / 100;
-        //     black_eval += (float)kings_end_util[black_king] / 100;
-        // }
-
-        // if (white_bishops >= 2) white_eval += 0.5;
-        // if (black_bishops >= 2) black_eval += 0.5;
-
-        // score = white_eval - black_eval;
-        // return score;
-
         float score = 0;
         int white_pawns = 0, black_pawns = 0;
         int white_pieces = 0, black_pieces = 0;
@@ -315,17 +192,17 @@ public:
                 int mirrored_i = 63 - i;
                 if (piece < 6) { // White pieces
                     white_pieces++;
-                    white_eval += piece_values[piece] + piece_util[piece][i] / 100.0f;
+                    if (piece != 5) white_eval += piece_values[piece] + (piece_util[piece][i] / 100.0f);
                     if (piece == 0) white_pawns++;
-                    if (piece == 2) white_bishops++;
-                    if (piece == 5) white_king = i;
+                    else if (piece == 2) white_bishops++;
+                    else if (piece == 5) white_king = i;
                 } else { // Black pieces
                     black_pieces++;
                     int black_piece = piece - 6;
-                    black_eval += piece_values[black_piece] + piece_util[black_piece][mirrored_i] / 100.0f;
+                    if (black_piece != 5) black_eval += piece_values[black_piece] + (piece_util[black_piece][mirrored_i] / 100.0f);
                     if (black_piece == 0) black_pawns++;
-                    if (black_piece == 2) black_bishops++;
-                    if (black_piece == 5) black_king = mirrored_i;
+                    else if (black_piece == 2) black_bishops++;
+                    else if (black_piece == 5) black_king = mirrored_i;
                 }
             }
         }
@@ -342,140 +219,272 @@ public:
         return score;
     }
 
-    // std::string getAlphaMove(int depth) {
-    //     return alphaBetaPruning(depth, -100000000, 100000000).second;
+    // float PieceDifference(const Board& board) {
+    //     map<Piece, float> PIECE_VALUES {
+    //     {Piece::WHITEPAWN, 1},
+    //     {Piece::WHITEKNIGHT, 2.9},
+    //     {Piece::WHITEBISHOP, 3.2},
+    //     {Piece::WHITEROOK, 5},
+    //     {Piece::WHITEQUEEN, 9.75},
+    //     {Piece::BLACKPAWN, 1},
+    //     {Piece::BLACKKNIGHT, 2.9},
+    //     {Piece::BLACKBISHOP, 3.2},
+    //     {Piece::BLACKROOK, 5},
+    //     {Piece::BLACKQUEEN, 9.75}
+    // };
+
+    // map<Piece, array<int, 64>> SQUARE_PIECE_VALUES {
+    // {Piece::WHITEPAWN, {
+    //     0,   0,   0,   0,   0,   0,   0,   0,
+    //     20,  50,  40,  20,  20,  40,  50,  20,
+    //     30,  10,  20,  25,  25,  20,  10,  30,
+    //     5,   5,   10,  40,  40,  10,  5,   5,
+    //     0,   0,   0,   20,  20,  0,   0,   0,
+    //     5,   5,   10,  0,   0,   10,  5,   5,
+    //     50,  50,  50,  50,  50,  50,  50,  50,
+    //     0,   0,   0,   0,   0,   0,   0,   0
+    // }},
+    // {Piece::WHITEKNIGHT, {
+    //     -50, -40, -30, -30, -30, -30, -40, -50,
+    //     -40, -20, 0,   0,   0,   0,   -20, -40,
+    //     -30, 0,   20,  15,  15,  20,  0,   -30,
+    //     -30, 5,   15,  20,  20,  15,  5,   -30,
+    //     -30, 5,   15,  20,  20,  15,  5,   -30,
+    //     -30, 5,   10,  15,  15,  10,  5,   -30,
+    //     -40, -20, 10,  5,   5,   10,  -20, -40,
+    //     -50, -40, -30, -30, -30, -30, -40, -50
+    // }},
+    // {Piece::WHITEBISHOP, {
+    //     -20, -10, -10, -10, -10, -10, -10, -20,
+    //     -10,  10,  0,   0,   0,   0,   10,  -10,
+    //     -10,  10,  10,  10,  10,  10,  10,  -10,
+    //     -10,  0,   10,  10,  10,  10,  0,   -10,
+    //     -10,  10,  5,   10,  10,  5,   10,  -10,
+    //     -10,  0,   5,   10,  10,  5,   0,   -10,
+    //     -10,  0,   0,   0,   0,   0,   0,   -10,
+    //     -20, -10, -10, -10, -10, -10, -10, -20
+    // }},
+    // {Piece::WHITEROOK, {
+    //     0,   0,   15,  15,  15,  15,  0,   0,
+    //     -5,  0,   0,   0,   0,   0,   0,   -5,
+    //     -5,  0,   0,   0,   0,   0,   0,   -5,
+    //     -5,  0,   0,   0,   0,   0,   0,   -5,
+    //     -5,  0,   0,   0,   0,   0,   0,   -5,
+    //     -5,  0,   0,   0,   0,   0,   0,   -5,
+    //     5,   10,  10,  10,  10,  10,  10,  5,
+    //     5,   5,   5,   5,   5,   5,   5,   5
+    // }},
+    // {Piece::WHITEQUEEN, {
+    //     -20, -10, -10, -5,  -5,  -10, -10, -20,
+    //     -10,  0,   0,   0,   0,   0,   0,   -10,
+    //     -10,  0,   5,   5,   5,   5,   0,   -10,
+    //     -5,   0,   5,   5,   5,   5,   0,   -5,
+    //     0,    0,   5,   5,   5,   5,   0,   0,
+    //     -10,  0,   5,   5,   5,   5,   0,   -10,
+    //     -10,  0,   0,   0,   0,   0,   0,   -10,
+    //     -20, -10, -10, -5,  -5,  -10, -10, -20
+    // }},
+    // // Black pieces (mirrored vertically)
+    // {Piece::BLACKPAWN, {
+    //     0,   0,   0,   0,   0,   0,   0,   0,
+    //     50,  50,  50,  50,  50,  50,  50,  50,
+    //     5,   5,   10,  0,   0,   10,  5,   5,
+    //     0,   0,   0,   20,  20,  0,   0,   0,  
+    //     5,   5,   10,  40,  40,  10,  5,   5,
+    //     30,  10,  20,  25,  25,  20,  10,  30,
+    //     20,  50,  40,  20,  20,  40,  50,  20,
+    //     0,   0,   0,   0,   0,   0,   0,   0
+    // }},
+    // {Piece::BLACKKNIGHT, {
+    //     -50, -40, -30, -30, -30, -30, -40, -50,
+    //     -40, -20, 10,  5,   5,   10,  -20, -40,
+    //     -30, 5,   10,  15,  15,  10,  5,   -30,
+    //     -30, 5,   15,  20,  20,  15,  5,   -30,
+    //     -30, 5,   15,  20,  20,  15,  5,   -30,
+    //     -30, 0,   20,  15,  15,  20,  0,   -30,
+    //     -40, -20, 0,   0,   0,   0,   -20, -40,
+    //     -50, -40, -30, -30, -30, -30, -40, -50
+    // }},
+    // {Piece::BLACKBISHOP, {
+    //     -20, -10, -10, -10, -10, -10, -10, -20,
+    //     -10,  0,   0,   0,   0,   0,   0,   -10,
+    //     -10,  0,   5,   5,   5,   5,   0,   -10,
+    //     -10,  5,   10,  10,  10,  10,  5,   -10,
+    //     -10,  0,   10,  10,  10,  10,  0,   -10,
+    //     -10,  10,  10,  10,  10,  10,  10,  -10,
+    //     -10,  10,  0,   0,   0,   0,   10,  -10,
+    //     -20, -10, -10, -10, -10, -10, -10, -20
+    // }},
+    // {Piece::BLACKROOK, {
+    //     5,   10,  10,  10,  10,  10,  10,  5,
+    //     5,   5,   5,   5,   5,   5,   5,   5,
+    //     -5,  0,   0,   0,   0,   0,   0,   -5,
+    //     -5,  0,   0,   0,   0,   0,   0,   -5,
+    //     -5,  0,   0,   0,   0,   0,   0,   -5,
+    //     -5,  0,   0,   0,   0,   0,   0,   -5,
+    //     0,   0,   15,  15,  15,  15,  0,   0,
+    //     0,   0,   0,   0,   0,   0,   0,   0
+    // }},
+    // {Piece::BLACKQUEEN, {
+    //     -20, -10, -10, -5,  -5,  -10, -10, -20,
+    //     -10,  0,   5,   5,   5,   5,   0,   -10,
+    //     -10,  0,   5,   5,   5,   5,   0,   -10,
+    //     -5,   0,   5,   5,   5,   5,   0,   -5,
+    //     0,    0,   5,   5,   5,   5,   0,   0,
+    //     -10,  0,   0,   0,   0,   0,   0,   -10,
+    //     -10,  0,   0,   0,   0,   0,   0,   -10,
+    //     -20, -10, -10, -5,  -5,  -10, -10, -20
+    // }}
+    
+    // };
+
+    // float white_points = 0;
+    // float black_points = 0;
+
+    // for (int i=0; i<64; i++){
+
+    //     int rownumber = 1 + i%8;
+    //     int columnnumber = 1 + i/8;
+
+    //     int squarenumber = (rownumber-1)* 8 + (columnnumber-1);
+
+    //     Square squarecheck = Square(i);
+    //     Piece piece = board.at(squarecheck);
+
+    //     if (piece == Piece::NONE || piece == Piece::BLACKKING || piece == Piece::WHITEKING){
+    //         continue;
+    //     }
+
+    //     float piecevalue = PIECE_VALUES[piece];
+        
+    //     Color piececolor = piece.color();
+
+    //     float pieceatsquarevalue = SQUARE_PIECE_VALUES[piece][squarenumber];
+
+
+    //     if (piececolor == Color::WHITE){
+    //         float value=piecevalue*(1+pieceatsquarevalue/200);
+    //         white_points += value;
+    //     }
+    //     else{
+    //         float value=piecevalue*(1+pieceatsquarevalue/200);
+    //         black_points += value;
+    //     }
+    
+    // } 
+
+
+    // if (abs(white_points - black_points)<=0.001){
+    //     return 0;
+    // }  
+    // else{
+    //     return (white_points - black_points) / 5;
+    // }
     // }
 
-    // std::string getBestMove(int maxDepth = 5) {
-        // alphaBetaPruning(maxDepth, -INFINITY, INFINITY);
-        // std::cout << "Hello" << std::endl;
-        // return alphaBetaPruning(maxDepth, -INFINITY, INFINITY).second;
-    //     auto start = std::chrono::high_resolution_clock::now();
-    //     if (board.sideToMove() == Color("b")) {
-    //         float bestScore = 100000000;
-    //         std::string bestMove = "";
-    //         for (int depth = 1; depth <= maxDepth; depth++) {
-    //             // std::cout << "Depth: " << depth << std::endl;
-    //             std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
-    //             auto end = std::chrono::high_resolution_clock::now();
-    //             double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    //             // std::cout << duration << std::endl;
-    //             if (duration < 1500 && depth == maxDepth) {
-    //                 maxDepth++;
-    //             }
-    //             // std::cout << "Depth: " << depth << std::endl;
-    //             // std::cout << "Best Score: " << result.first << (bestScore <= 10000000000) << std::endl;
-    //             if (result.first <= bestScore) {
-    //                 bestScore = result.first;
-    //                 bestMove = result.second;
-    //             }
-    //             if (bestScore <= -100000000 + 130000) {
-    //                 // std::cout << "Depth: " << depth << std::endl;
-    //                 break;
-    //             }
-    //         }
-    //         // std::cout << "Depth: " << maxDepth << std::endl;
-    //         return bestMove;
-    //     }
-    //     float bestScore = -100000000;   
-    //     std::string bestMove = "";
-    //     for (int depth = 1; depth <= maxDepth; depth++) {
-    //         // std::cout << "Depth: " << depth << std::endl;
-    //         std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
-    //         auto end = std::chrono::high_resolution_clock::now();
-    //         double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    //         // std::cout << duration << std::endl;
-    //         if (duration < 1500 && depth == maxDepth) {
-    //             maxDepth++;
-    //         }
-    //         // std::cout << "Depth: " << depth << std::endl;
-    //         // std::cout << "Best Score: " << result.first << std::endl;
-    //         if (result.first >= bestScore) {
-    //             bestScore = result.first;
-    //             bestMove = result.second;
-    //         }
-    //         if (bestScore >= 100000000 - 130000) {
-    //             // std::cout << "Depth: " << depth << std::endl;
-    //             break;
-    //         }
-    //     }
-    //     // std::cout << "Depth: " << maxDepth << std::endl;
-    //     return bestMove;
-    // }
-
-    std::pair<std::string, int> getBetaMove() {
+    std::pair<std::string, int> getBetaMove(int max_time = 10000) {
         auto start = std::chrono::high_resolution_clock::now();
         int depth = 1;
         if (board.sideToMove() == Color("w")) {
-            float bestScore = -100000000;
+            float bestScore = -MAX_EVAL;
             std::string bestMove = "";
-            double duration = 0;
-            while (duration <= 10000) {
-                // std::cout << "Depth: " << depth << std::endl;
+            float duration = 0;
+            while (duration <= max_time) {
                 auto start_ = std::chrono::high_resolution_clock::now();
                 bool flag = false;
                 int nodes = 0;
-                std::pair<float, std::string> result = alphaBetaPruning_flag(depth, -100000000, 100000000, start, flag, nodes, true);
+                std::pair<float, std::string> result = alphaBetaPruning_flag(depth, -MAX_EVAL, MAX_EVAL, start, flag, nodes, max_time, true);
                 if (flag) {
                     break;
                 }
                 auto end = std::chrono::high_resolution_clock::now();
-                double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-                // std::cout << result.first << " " << bestScore << std::endl;
-                // std::cout << duration << std::endl;
-                double duration_ = std::chrono::duration_cast<std::chrono::milliseconds>(end - start_).count();
-                // std::cout << "Depth: " << depth << " " << duration_ << " " << result.first << " " << result.second << std::endl;
+                float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+                float duration_ = std::chrono::duration_cast<std::chrono::milliseconds>(end - start_).count();
 
                 bestScore = result.first;
                 bestMove = result.second;
-                if (bestScore >= 100000000 - 10000) {
-                    // std::cout << "Depth: " << depth << std::endl;
+                if (bestScore >= MAX_EVAL - 10000) {
                     break;
                 }
-                if (duration > 10000) {
+                if (duration > max_time) {
                     break;
                 }
                 std::cout << "info depth " << depth 
                 << " score cp " << static_cast<int>(bestScore * 100) 
                 << " time " << static_cast<int>(duration) 
-                << " nodes " << nodes << std::endl;
+                << " nodes " << nodes 
+                << " pv";
+                std::vector<Move> moves(depth);
+                for (int i=0; i<depth; i++) {
+                    // std::cout << "Heyyyyyy " << depth << std::endl;
+                    // std::cout << board << std::endl;
+                    if (i == 0) {
+                        std::cout << " " << bestMove;
+                        moves[0] = uci::uciToMove(board, bestMove);
+                        board.makeMove(uci::uciToMove(board, bestMove));
+                    } else {
+                        std::pair<float, std::string> result = alphaBetaPruning_flag(1, -MAX_EVAL, MAX_EVAL, start, flag, nodes, max_time, true);
+                        std::cout << " " << result.second;
+                        moves[i] = uci::uciToMove(board, result.second);
+                        board.makeMove(uci::uciToMove(board, result.second));
+                    }
+                }
+                std::cout << std::endl;
+                for (int i=depth-1; i>=0; i--) {
+                    board.unmakeMove(moves[i]);
+                }
                 depth++;
             }
-            // std::cout << "Depth: " << depth << std::endl;
             return {bestMove, depth};
         }
-        float bestScore = 100000000;
+        float bestScore = MAX_EVAL;
         std::string bestMove = "";
-        double duration = 0;
-        while (duration <= 10000) {
-            // std::cout << "Depth: " << depth << std::endl;
+        float duration = 0;
+        while (duration <= max_time) {
             auto start_ = std::chrono::high_resolution_clock::now();
             bool flag = false;
             int nodes = 0;
-            std::pair<float, std::string> result = alphaBetaPruning_flag(depth, -100000000, 100000000, start, flag, nodes, true);
+            std::pair<float, std::string> result = alphaBetaPruning_flag(depth, -MAX_EVAL, MAX_EVAL, start, flag, nodes, true);
             if (flag) {
                 break;
             }
             auto end = std::chrono::high_resolution_clock::now();
-            double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-            double duration_ = std::chrono::duration_cast<std::chrono::milliseconds>(end - start_).count();
-            // std::cout << "Depth: " << depth << " " << duration_ << " " << result.first << " " << result.second << std::endl;
+            float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            float duration_ = std::chrono::duration_cast<std::chrono::milliseconds>(end - start_).count();
             bestScore = result.first;
             bestMove = result.second;
-            if (bestScore <= -100000000 + 10000) {
-                // std::cout << "Depth: " << depth << std::endl;
+            if (bestScore <= -MAX_EVAL + 10000) {
                 break;
             }
-            if (duration > 10000) {
+            if (duration > max_time) {
                 break;
             }
             std::cout << "info depth " << depth 
             << " score cp " << static_cast<int>(bestScore * 100) 
             << " time " << static_cast<int>(duration) 
-            << " nodes " << nodes << std::endl;
+            << " nodes " << nodes
+            << " pv";
+            std::vector<Move> moves(depth);
+            for (int i=0; i<depth; i++) {
+                // std::cout << "Heyyyyyy" << std::endl;
+                if (i == 0) {
+                    std::cout << " " << bestMove;
+                    moves[0] = uci::uciToMove(board, bestMove);
+                    board.makeMove(uci::uciToMove(board, bestMove));
+                } else {
+                    std::pair<float, std::string> result = alphaBetaPruning_flag(1, -MAX_EVAL, MAX_EVAL, start, flag, nodes, true);
+                    std::cout << " " << result.second;
+                    moves[i] = uci::uciToMove(board, result.second);
+                    board.makeMove(uci::uciToMove(board, result.second));
+                }
+            }
+            std::cout << std::endl;
+            for (int i=depth-1; i>=0; i--) {
+                board.unmakeMove(moves[i]);
+            }
+            // std::cout << board << std::endl;
             depth++;
         }
-        // std::cout << "Depth: " << depth << std::endl;
         return {bestMove, depth};
     }
 
@@ -484,7 +493,7 @@ public:
     }
 
     std::string getBestMove() {
-        return alphaBetaPruning(5, -100000000, 100000000).second;
+        return alphaBetaPruning(5, -MAX_EVAL, MAX_EVAL).second;
     }
 
 private:
@@ -507,147 +516,7 @@ private:
         }
     }
     
-    // std::vector<float> pawns_util = {
-    //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    //     5.0, 10.0, 10.0, -20.0, -20.0, 10.0, 10.0, 5.0, 
-    //     5.0, -5.0, -10.0, 0.0, 0.0, -10.0, -5.0, 5.0, 
-    //     0.0, 0.0, 0.0, 20.0, 20.0, 0.0, 0.0, 0.0, 
-    //     5.0, 5.0, 10.0, 25.0, 25.0, 10.0, 5.0, 5.0, 
-    //     10.0, 10.0, 20.0, 30.0, 30.0, 20.0, 10.0, 10.0, 
-    //     50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 
-    //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
-    // };
-    
-    // std::vector<float> knights_util = {
-    //     -50.0, -40.0, -30.0, -30.0, -30.0, -30.0, -40.0, -50.0, 
-    //     -40.0, -20.0, 0.0, 5.0, 5.0, 0.0, -20.0, -40.0, 
-    //     -30.0, 5.0, 10.0, 15.0, 15.0, 10.0, 5.0, -30.0, 
-    //     -30.0, 0.0, 15.0, 20.0, 20.0, 15.0, 0.0, -30.0, 
-    //     -30.0, 5.0, 15.0, 20.0, 20.0, 15.0, 5.0, -30.0, 
-    //     -30.0, 0.0, 10.0, 15.0, 15.0, 10.0, 0.0, -30.0, 
-    //     -40.0, -20.0, 0.0, 0.0, 0.0, 0.0, -20.0, -40.0, 
-    //     -50.0, -40.0, -30.0, -30.0, -30.0, -30.0, -40.0, -50.0, 
-    // };
-    
-    // std::vector<float> bishops_util = {
-    //     -20.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -20.0, 
-    //     -10.0, 5.0, 0.0, 0.0, 0.0, 0.0, 5.0, -10.0, 
-    //     -10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, -10.0, 
-    //     -10.0, 0.0, 10.0, 10.0, 10.0, 10.0, 0.0, -10.0, 
-    //     -10.0, 5.0, 5.0, 10.0, 10.0, 5.0, 5.0, -10.0, 
-    //     -10.0, 0.0, 5.0, 10.0, 10.0, 5.0, 0.0, -10.0, 
-    //     -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -10.0, 
-    //     -20.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -20.0, 
-    // };
-    
-    // std::vector<float> rooks_util = {
-    //     0.0, 0.0, 0.0, 5.0, 5.0, 0.0, 0.0, 0.0, 
-    //     -5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -5.0, 
-    //     -5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -5.0, 
-    //     -5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -5.0, 
-    //     -5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -5.0, 
-    //     -5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -5.0, 
-    //     5.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 5.0, 
-    //     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
-    // };
-    
-    // std::vector<float> queens_util = {
-    //     -20.0, -10.0, -10.0, -5.0, -5.0, -10.0, -10.0, -20.0, 
-    //     -10.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, -10.0, 
-    //     -10.0, 5.0, 5.0, 5.0, 5.0, 5.0, 0.0, -10.0, 
-    //     0.0, 0.0, 5.0, 5.0, 5.0, 5.0, 0.0, -5.0, 
-    //     -5.0, 0.0, 5.0, 5.0, 5.0, 5.0, 0.0, -5.0, 
-    //     -10.0, 0.0, 5.0, 5.0, 5.0, 5.0, 0.0, -10.0, 
-    //     -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -10.0, 
-    //     -20.0, -10.0, -10.0, -5.0, -5.0, -10.0, -10.0, -20.0, 
-    // };
-
-    // std::vector<float> kings_start_util = {
-    //     20.0, 30.0, 10.0, 0.0, 0.0, 10.0, 30.0, 20.0, 
-    //     20.0, 20.0, -5.0, -5.0, -5.0, -5.0, 20.0, 20.0, 
-    //     -10.0, -20.0, -20.0, -20.0, -20.0, -20.0, -20.0, -10.0, 
-    //     -20.0, -30.0, -30.0, -40.0, -40.0, -30.0, -30.0, -20.0, 
-    //     -30.0, -40.0, -40.0, -50.0, -50.0, -40.0, -40.0, -30.0, 
-    //     -40.0, -50.0, -50.0, -60.0, -60.0, -50.0, -50.0, -40.0, 
-    //     -60.0, -60.0, -60.0, -60.0, -60.0, -60.0, -60.0, -60.0, 
-    //     -80.0, -70.0, -70.0, -70.0, -70.0, -70.0, -70.0, -80.0, 
-    // };
-
-    // std::vector<float> kings_end_util = {
-    //     -50.0, -30.0, -30.0, -30.0, -30.0, -30.0, -30.0, -50.0, 
-    //     -30.0, -25.0, 0.0, 0.0, 0.0, 0.0, -25.0, -30.0, 
-    //     -25.0, -20.0, 20.0, 25.0, 25.0, 20.0, -20.0, -25.0, 
-    //     -20.0, -15.0, 30.0, 40.0, 40.0, 30.0, -15.0, -20.0, 
-    //     -15.0, -10.0, 35.0, 45.0, 45.0, 35.0, -10.0, -15.0, 
-    //     -10.0, -5.0, 20.0, 30.0, 30.0, 20.0, -5.0, -10.0, 
-    //     -5.0, 0.0, 5.0, 5.0, 5.0, 5.0, 0.0, -5.0, 
-    //     -20.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -20.0, 
-    // };
-
-    // std::pair<float, std::string> iterativeDeepening(int maxDepth) {
-    //     std::string bestMove = "";
-    //     auto start = std::chrono::high_resolution_clock::now();
-    //     if (board.sideToMove() == Color("w")) {
-    //         float bestScore = -100000000;
-    //         for (int depth = 1; depth <= maxDepth; depth++) {
-    //             std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
-    //             auto end = std::chrono::high_resolution_clock::now();
-    //             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    //             if (duration <= 2000) {
-    //                 maxDepth++;
-    //             }
-    //             if (result.first < bestScore) {
-    //                 bestScore = result.first;
-    //                 bestMove = result.second;
-    //             }
-    //         }
-    //         // std::cout << "Best Score: " << bestScore << std::endl;
-    //         return {bestScore, bestMove};
-    //     }
-    //     if (board.sideToMove() == Color("b")) {
-    //         float bestScore = 100000000;
-    //         for (int depth = 1; depth <= maxDepth; depth++) {
-    //             std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
-    //             // std::cout << "Depth: " << depth << std::endl;
-    //             // std::cout << "Best Score: " << result.first << (bestScore <= 10000000000) << std::endl;
-    //             auto end = std::chrono::high_resolution_clock::now();
-    //             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    //             if (duration <= 2000) {
-    //                 maxDepth++;
-    //             }
-    //             if (result.first < bestScore) {
-    //                 bestScore = result.first;
-    //                 bestMove = result.second;
-    //             }
-    //             if (bestScore <= -100000000 + 130000) {
-    //                 // std::cout << "Depth: " << depth << std::endl;
-    //                 break;
-    //             }
-    //         }
-    //         // std::cout << "Depth: " << depth << std::endl;
-    //         // std::cout << "Best Score: " << bestScore << std::endl;
-    //         return {bestScore, bestMove};
-    //     }
-    //     float bestScore = -100000000;
-    //     for (int depth = 1; depth <= maxDepth; depth++) {
-    //         std::pair<float, std::string> result = alphaBetaPruning(depth, -100000000, 100000000);
-    //         // std::cout << "Depth: " << depth << std::endl;
-    //         // std::cout << "Best Score: " << result.first << std::endl;
-    //         if (result.first > bestScore) {
-    //             bestScore = result.first;
-    //             bestMove = result.second;
-    //         }
-    //         if (bestScore >= 100000000 - 130000) {
-    //             std::cout << "Depth: " << depth << std::endl;
-    //             break;
-    //         }
-    //     }
-    //     // std::cout << "Depth: " << depth << std::endl;
-    //     // std::cout << "Best Score: " << bestScore << std::endl;
-    //     return {bestScore, bestMove};
-    // }
-
-    std::pair<float, std::string> alphaBetaPruning_flag(int depth, float alpha, float beta, std::chrono::time_point<std::chrono::high_resolution_clock> start, bool& flag, int& nodes, bool root = false) {
+    std::pair<float, std::string>alphaBetaPruning_flag(int depth, float alpha, float beta, std::chrono::time_point<std::chrono::high_resolution_clock> start, bool& flag, int& nodes, int max_time = 10000, bool root = false) {
         if (!root) {
             if (transpositionTable.find(board.hash()) != transpositionTable.end()) {
                 auto find = transpositionTable[board.hash()];
@@ -663,9 +532,9 @@ private:
                 return {100000001, ""};
             }
         }
-        double duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
+        float duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
         nodes++;
-        if (duration >= 10000) {
+        if (duration >= max_time) {
             // std::cout << "Hey" << std::endl;
             flag = true;
             if (board.sideToMove() == Color("w")) {
@@ -676,30 +545,35 @@ private:
         }
         if (board.getHalfMoveDrawType().first == GameResultReason::CHECKMATE) {
             if(board.sideToMove() == Color("w")) {
-                transpositionTable[board.hash()] = std::make_pair(-100000000 + (100-depth)*100, depth);
-                return {-100000000 + (100-depth)*100, ""};
-                //change to 1000000-depth should fix it
+                transpositionTable[board.hash()] = std::make_pair(-MAX_EVAL + (100-depth)*100, depth);
+                return {-MAX_EVAL + (100-depth)*100, ""};
             } else {
-                transpositionTable[board.hash()] = std::make_pair(100000000 - (100-depth)*100, depth);
-                return {100000000 - (100-depth)*100, ""};
+                transpositionTable[board.hash()] = std::make_pair(MAX_EVAL - (100-depth)*100, depth);
+                return {MAX_EVAL - (100-depth)*100, ""};
             }
         }
         if (board.isGameOver().second == GameResult::DRAW) {
             // transpositionTable[board.hash()] = std::make_pair(0, depth);
             if (board.sideToMove() == Color("w")) {
                 transpositionTable[board.hash()] = std::make_pair(-1e8 + (100)*100, depth);
-                return {-1e8 + (100)*100, ""};
+                return {0, ""};
             } else {
                 transpositionTable[board.hash()] = std::make_pair(1e8 - (100)*100, depth);
-                return {1e8 - (100)*100, ""};
+                return {0, ""};
             }
         }
         if (depth == 0) {
             return {evaluate(), ""};
         }
-        auto moves = getLegalMoves();
-        std::string bestMove = uci::moveToUci(moves[0]);
-        for (const auto& move : moves) {
+        auto moves = getOrderedMoves();
+        int i = 0;
+        std::string bestMove;
+        float bestScore = board.sideToMove() == Color("w") ? -MAX_EVAL : MAX_EVAL;
+        for (const auto& movie : moves) {
+            Move move = movie.first;
+            if (i == 0) {
+                bestMove = uci::moveToUci(move);
+            }
             board.makeMove(move);
             float score;
             if (transpositionTable.find(board.hash()) != transpositionTable.end()) {
@@ -708,68 +582,67 @@ private:
                     score = transposition.first;
                 } else {
                     score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, nodes).first;
-                    if (abs(score) >= 100000000) {
+                    if (abs(score) >= MAX_EVAL) {
                         board.unmakeMove(move);
                         break;
                     }
                 }
             } else {
                 score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, nodes).first;
-                if (abs(score) >= 100000000) {
+                if (abs(score) >= MAX_EVAL) {
                     board.unmakeMove(move);
                     break;
                 }
             }
-            // float score = alphaBetaPruning(depth - 1, alpha, beta).first;
             board.unmakeMove(move);
             if (board.sideToMove() == Color("w")) {
-                if (score > alpha) {
-                    alpha = score;
+                if (score > bestScore) {
+                    bestScore = score;
                     bestMove = uci::moveToUci(move);
+                    alpha = std::max(alpha, score);
                 }
             } else {
-                if (score < beta) {
-                    beta = score;
+                if (score < bestScore) {
+                    bestScore = score;
                     bestMove = uci::moveToUci(move);
+                    beta = std::min(beta, score);
                 }
             }
             // if (depth == 5) {
-            //     std::cout << uci::moveToUci(move) << " " << score << std::endl;
+            //     std::cout << move << " " << score << " " << bestMove << " " << bestScore << std::endl;
             // }
             if (alpha >= beta) {
                 break;
             }
-            // std::cout << depth << " " << uci::moveToUci(move) << " " << score << std::endl;
-            
+            i++;
         }
         if (flag) {
             return {board.sideToMove() == Color("w") ? alpha : beta, bestMove};
         }
-        transpositionTable[board.hash()] = std::make_pair(board.sideToMove() == Color("w") ? alpha : beta, depth);
-        return {board.sideToMove() == Color("w") ? alpha : beta, bestMove};
+        transpositionTable[board.hash()] = std::make_pair(bestScore, depth);
+        return {bestScore, bestMove};
     }
 
     std::pair<float, std::string> alphaBetaPruning(int depth, float alpha, float beta) {
         if (board.getHalfMoveDrawType().first == GameResultReason::CHECKMATE) {
             if(board.sideToMove() == Color("w")) {
-                transpositionTable[board.hash()] = std::make_pair(-100000000 + (100-depth)*100, depth);
-                return {-100000000 + (100-depth)*100, ""};
+                transpositionTable[board.hash()] = std::make_pair(-MAX_EVAL + (100-depth)*100, depth);
+                return {-MAX_EVAL + (100-depth)*100, ""};
             } else {
-                transpositionTable[board.hash()] = std::make_pair(100000000 - (100-depth)*100, depth);
-                return {100000000 - (100-depth)*100, ""};
+                transpositionTable[board.hash()] = std::make_pair(MAX_EVAL - (100-depth)*100, depth);
+                return {MAX_EVAL - (100-depth)*100, ""};
             }
         }
         if (depth == 0) {
             return {evaluate(), ""};
         }
         if (board.isGameOver().second == GameResult::DRAW) {
-            // transpositionTable[board.hash()] = std::make_pair(0, depth);
             if (board.sideToMove() == Color("w")) {
-                transpositionTable[board.hash()] = std::make_pair(-1e8 + (100)*100, depth);
-                return {-1e8 + (100)*100, ""};
+                transpositionTable[board.hash()] = std::make_pair(0, depth);
+                return {0, ""};
             } else {
-                transpositionTable[board.hash()] = std::make_pair(1e8 - (100)*100, depth);
-                return {1e8 - (100)*100, ""};
+                transpositionTable[board.hash()] = std::make_pair(0, depth);
+                return {0, ""};
             }
         }
         auto moves = getLegalMoves();
@@ -783,7 +656,7 @@ private:
                     score = transposition.first;
                 } else {
                     score = alphaBetaPruning(depth - 1, alpha, beta).first;
-                    if (abs(score) >= 100000000) {
+                    if (abs(score) >= MAX_EVAL) {
                         board.unmakeMove(move);
                         break;
                     }
@@ -791,7 +664,6 @@ private:
             } else {
                 score = alphaBetaPruning(depth - 1, alpha, beta).first;
             }
-            // float score = alphaBetaPruning(depth - 1, alpha, beta).first;
             board.unmakeMove(move);
             if (board.sideToMove() == Color("w")) {
                 if (score > alpha) {
@@ -804,17 +676,12 @@ private:
                     bestMove = uci::moveToUci(move);
                 }
             }
-            // if (depth == 5) {
-            //     std::cout << uci::moveToUci(move) << " " << score << std::endl;
-            // }
             if (alpha >= beta) {
                 break;
             }
-            // std::cout << depth << " " << uci::moveToUci(move) << " " << score << std::endl;
-            
         }
         transpositionTable[board.hash()] = std::make_pair(board.sideToMove() == Color("w") ? alpha : beta, depth);
-        return {board.sideToMove() == Color("w") ? alpha : beta, bestMove};
+        return {(board.sideToMove() == Color("w")) ? alpha : beta, bestMove};
     }
 
     
@@ -879,6 +746,16 @@ int main() {
                     engine.board.makeMove(uci::uciToMove(engine.board, move));
                 }
             }
+        } else if(command.substr(0, 11) == "go movetime"){
+            std::istringstream iss(command);
+            std::string goCommand, movetimeKeyword;
+            int maxTimeInMillis = 10000;
+            iss >> goCommand >> movetimeKeyword >> maxTimeInMillis;
+            std::cout << "Max time per move: " << maxTimeInMillis << std::endl;
+            auto move = engine.getBetaMove(maxTimeInMillis);
+            float eval = engine.getEval();
+            // std::cout << "info depth " << move.second << " score cp " << static_cast<int>(eval * 100) << std::endl;
+            sendResponse("bestmove " + move.first);
         } else if(command.substr(0, 2) == "go") {
             auto move = engine.getBetaMove();
             float eval = engine.getEval();
