@@ -806,7 +806,7 @@ private:
 
         auto moves = getLegalMoves();
         std::string bestMove = uci::moveToUci(moves[0]);
-        float = 
+        return 
     }
 
 };

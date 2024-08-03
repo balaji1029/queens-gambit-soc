@@ -1,0 +1,142 @@
+140c140
+<     std::unordered_map<uint64_t, std::pair<float, int>> transpositionTable;
+---
+>     std::unordered_map<uint64_t, std::tuple<float, std::string, int>> transpositionTable;
+143c143
+<             // load_transposition_table();
+---
+>             load_transposition_table();
+277c277
+<                 std::pair<float, std::string> result = alphaBetaPruning_flag(depth, -MAX_EVAL, MAX_EVAL, start, flag, nodes, true, max_time);
+---
+>                 std::pair<float, std::string> result = alphaBetaPruning_flag(depth, -MAX_EVAL, MAX_EVAL, start, flag, nodes, max_time);
+308c308
+<                         std::pair<float, std::string> result = alphaBetaPruning_flag(1, -MAX_EVAL, MAX_EVAL, start, flag, nodes, true, max_time);
+---
+>                         std::pair<float, std::string> result = alphaBetaPruning_flag(1, -MAX_EVAL, MAX_EVAL, start, flag, nodes, max_time);
+320c320
+<             // std::cout << "Returning" << std::endl;
+---
+>             save_transposition_table();
+331c331
+<             std::pair<float, std::string> result = alphaBetaPruning_flag(depth, -MAX_EVAL, MAX_EVAL, start, flag, nodes, true, max_time);
+---
+>             std::pair<float, std::string> result = alphaBetaPruning_flag(depth, -MAX_EVAL, MAX_EVAL, start, flag, nodes, true);
+363c363
+<                     std::pair<float, std::string> result = alphaBetaPruning_flag(1, -MAX_EVAL, MAX_EVAL, start, flag, nodes, true, max_time);
+---
+>                     std::pair<float, std::string> result = alphaBetaPruning_flag(1, -MAX_EVAL, MAX_EVAL, start, flag, nodes, true);
+375a376
+>         save_transposition_table();
+380c381
+<         return transpositionTable[board.hash()].first;
+---
+>         return std::get<0>(transpositionTable[board.hash()]);
+397,398c398,400
+<                 int value2;
+<                 if (iss >> key >> value1 >> value2) {
+---
+>                 std::string value2;
+>                 int value3;
+>                 if (iss >> key >> value1 >> value2 >> value3) {
+400c402
+<                     transpositionTable[hash] = {value1, value2};
+---
+>                     transpositionTable[hash] = {value1, value2, value3};
+410c412
+<             file << key << " " << value.first << " " << value.second << std::endl;
+---
+>             file << key << " " << std::get<0>(value) << " " << std::get<1>(value) << " " << std::get<2>(value) << std::endl;
+416c418
+<     std::pair<float, std::string>alphaBetaPruning_flag(int depth, float alpha, float beta, std::chrono::time_point<std::chrono::high_resolution_clock> start, bool& flag, int& nodes, bool root, int max_time = 10000) {
+---
+>     std::pair<float, std::string>alphaBetaPruning_flag(int depth, float alpha, float beta, std::chrono::time_point<std::chrono::high_resolution_clock> start, bool& flag, int& nodes, int max_time = 10000) {
+418,424c420,424
+<         if (!root) {
+<             if (transpositionTable.find(board.hash()) != transpositionTable.end()) {
+<                 auto find = transpositionTable[board.hash()];
+<                 if (find.second >= depth) {
+<                     // std::cout << "Hereeeeee" << std::endl;
+<                     return {find.first, ""};
+<                 }
+---
+>         if (transpositionTable.find(board.hash()) != transpositionTable.end()) {
+>             auto find = transpositionTable[board.hash()];
+>             if (std::get<2>(find) >= depth) {
+>                 // std::cout << "Hereeeeee" << std::endl;
+>                 return {std::get<0>(find), std::get<1>(find)};
+436d435
+<         // std::cout << duration << " " << max_time << std::endl;
+448c447
+<                 transpositionTable[board.hash()] = std::make_pair(-MAX_EVAL + (100-depth)*100, depth);
+---
+>                 transpositionTable[board.hash()] = {-MAX_EVAL + (100-depth)*100, "", depth};
+451c450
+<                 transpositionTable[board.hash()] = std::make_pair(MAX_EVAL - (100-depth)*100, depth);
+---
+>                 transpositionTable[board.hash()] = {MAX_EVAL - (100-depth)*100, "", depth};
+458c457
+<                 transpositionTable[board.hash()] = std::make_pair(-1e8 + (100)*100, depth);
+---
+>                 transpositionTable[board.hash()] = {-1e8 + (100)*100, "", depth};
+461c460
+<                 transpositionTable[board.hash()] = std::make_pair(1e8 - (100)*100, depth);
+---
+>                 transpositionTable[board.hash()] = {1e8 - (100)*100, "", depth};
+472d470
+<         // std::cout << "Size: " << moves.size() << std::endl;
+478d475
+<             // std::cout << "Reached" << std::endl;
+480d476
+<             // std::cout << "Reached" << std::endl;
+483,485c479,481
+<                 std::pair<float, int> transposition = transpositionTable[board.hash()];
+<                 if (transposition.second >= depth) {
+<                     score = transposition.first;
+---
+>                 auto transposition = transpositionTable[board.hash()];
+>                 if (std::get<2>(transposition) >= depth) {
+>                     score = std::get<0>(transposition);
+487c483
+<                     score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, nodes, false, max_time).first;
+---
+>                     score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, nodes).first;
+494c490
+<                 score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, nodes, false, max_time).first;
+---
+>                 score = alphaBetaPruning_flag(depth - 1, alpha, beta, start, flag, nodes).first;
+525c521
+<         transpositionTable[board.hash()] = std::make_pair(bestScore, depth);
+---
+>         transpositionTable[board.hash()] = {bestScore, bestMove, depth};
+533c529
+<                 transpositionTable[board.hash()] = std::make_pair(-MAX_EVAL + (100-depth)*100, depth);
+---
+>                 transpositionTable[board.hash()] = {-MAX_EVAL + (100-depth)*100, "", depth};
+536c532
+<                 transpositionTable[board.hash()] = std::make_pair(MAX_EVAL - (100-depth)*100, depth);
+---
+>                 transpositionTable[board.hash()] = {MAX_EVAL - (100-depth)*100, "", depth};
+545c541
+<                 transpositionTable[board.hash()] = std::make_pair(0, depth);
+---
+>                 transpositionTable[board.hash()] = {0, "", depth};
+548c544
+<                 transpositionTable[board.hash()] = std::make_pair(0, depth);
+---
+>                 transpositionTable[board.hash()] = {0, "", depth};
+558,560c554,556
+<                 std::pair<float, int> transposition = transpositionTable[board.hash()];
+<                 if (transposition.second >= depth) {
+<                     score = transposition.first;
+---
+>                 auto transposition = transpositionTable[board.hash()];
+>                 if (std::get<2>(transposition) >= depth) {
+>                     score = std::get<0>(transposition);
+587c583
+<         transpositionTable[board.hash()] = std::make_pair(board.sideToMove() == Color("w") ? alpha : beta, depth);
+---
+>         transpositionTable[board.hash()] = {board.sideToMove() == Color("w") ? alpha : beta, bestMove, depth};
+675,676d670
+<         } else if (command == "len") {
+<             std::cout << engine.transpositionTable.size() << std::endl;
